@@ -62,6 +62,7 @@ pub enum SpecId {
     CANYON = 19,
     CANCUN = 20,
     ECOTONE = 21,
+    FERMAT = 22,
     #[default]
     LATEST = u8::MAX,
 }
@@ -107,6 +108,8 @@ impl From<&str> for SpecId {
             "Canyon" => SpecId::CANYON,
             #[cfg(feature = "optimism")]
             "Ecotone" => SpecId::ECOTONE,
+            #[cfg(feature = "optimism")]
+            "Fermat" => SpecId::FERMAT,
             _ => Self::LATEST,
         }
     }
@@ -164,6 +167,8 @@ spec!(REGOLITH, RegolithSpec);
 spec!(CANYON, CanyonSpec);
 #[cfg(feature = "optimism")]
 spec!(ECOTONE, EcotoneSpec);
+#[cfg(feature = "optimism")]
+spec!(FERMAT, FermatSpec);
 
 #[macro_export]
 macro_rules! spec_to_generic {
@@ -244,6 +249,11 @@ macro_rules! spec_to_generic {
                 use $crate::EcotoneSpec as SPEC;
                 $e
             }
+            #[cfg(feature = "optimism")]
+            $crate::SpecId::FERMAT => {
+                use $crate::FermatSpec as SPEC;
+                $e
+            }
         }
     }};
 }
@@ -279,6 +289,7 @@ mod tests {
         spec_to_generic!(SHANGHAI, assert_eq!(SPEC::SPEC_ID, SHANGHAI));
         #[cfg(feature = "optimism")]
         spec_to_generic!(CANYON, assert_eq!(SPEC::SPEC_ID, CANYON));
+        #[cfg(feature = "optimism")]
         spec_to_generic!(CANCUN, assert_eq!(SPEC::SPEC_ID, CANCUN));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
     }
