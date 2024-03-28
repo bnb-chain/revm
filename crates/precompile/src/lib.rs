@@ -19,6 +19,8 @@ pub mod kzg_point_evaluation;
 pub mod modexp;
 pub mod secp256k1;
 pub mod utilities;
+mod bls;
+mod cometbft;
 
 use core::hash::Hash;
 use once_cell::race::OnceBox;
@@ -64,6 +66,7 @@ impl Precompiles {
             PrecompileSpecId::BYZANTIUM => Self::byzantium(),
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
+            PrecompileSpecId::FERMAT => Self::fermat(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
@@ -128,6 +131,26 @@ impl Precompiles {
                 // EIP-2565: ModExp Gas Cost.
                 modexp::BERLIN,
             ]);
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for Fermat spec.
+    ///
+    /// effectively making this the same as Berlin.
+    pub fn fermat() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::berlin().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+                ]);
+                precompiles
+            };
+
             Box::new(precompiles)
         })
     }
@@ -230,6 +253,7 @@ pub enum PrecompileSpecId {
     BYZANTIUM,
     ISTANBUL,
     BERLIN,
+    FERMAT,
     CANCUN,
     LATEST,
 }
@@ -251,6 +275,8 @@ impl PrecompileSpecId {
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
             ECOTONE => Self::CANCUN,
+            #[cfg(feature = "optimism")]
+            FERMAT => Self::FERMAT,
         }
     }
 }
