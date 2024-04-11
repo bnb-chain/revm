@@ -87,7 +87,7 @@ fn calc_gas_cost(input: &Bytes) -> u64 {
     return cost;
 }
 
-
+#[cfg(test)]
 mod tests {
     use revm_primitives::hex;
     use super::*;

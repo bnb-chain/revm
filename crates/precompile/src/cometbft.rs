@@ -280,10 +280,9 @@ fn encode_light_block_validation_result(validator_set_changed: bool, consensus_s
     Bytes::from(output)
 }
 
-
+#[cfg(test)]
 mod tests {
     use revm_primitives::hex;
-
     use super::*;
 
     #[test]
