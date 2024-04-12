@@ -2,7 +2,7 @@ name: Valgrind Cachegrind
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   valgrind:
@@ -12,11 +12,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Setup | Rust
-        uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: stable
 
       - name: Install Valgrind
         run: |
