@@ -40,8 +40,8 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     let _ = bls::signature_to_point(&signature.to_vec()).map_err(|_| Error::BLSInvalidSignature)?;
 
     let pub_key_count = (input_length - msg_and_sig_length) / BLS_SINGLE_PUBKEY_LENGTH;
-    let mut pub_keys = Vec::new();
-    let mut msg_hashes = Vec::new();
+    let mut pub_keys = Vec::with_capacity(pub_key_count as usize);
+    let mut msg_hashes = Vec::with_capacity(pub_key_count as usize);
 
     // check pubkey format and push to pub_keys
     for i in 0..pub_key_count {
