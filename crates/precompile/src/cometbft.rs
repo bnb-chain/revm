@@ -14,6 +14,9 @@ use cometbft_light_client_verifier::{
 use cometbft_proto::types::v1::LightBlock as TmLightBlock;
 use prost::Message;
 use revm_primitives::Bytes;
+use std::borrow::ToOwned;
+use std::string::String;
+use std::vec::Vec;
 
 pub const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
