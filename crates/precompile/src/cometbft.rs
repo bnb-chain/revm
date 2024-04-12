@@ -1,12 +1,19 @@
-use crate::{Error, Precompile, PrecompileResult, PrecompileError, PrecompileWithAddress};
-use cometbft_light_client::{predicates::VerificationPredicates, types::{LightBlock, TrustThreshold}};
-use revm_primitives::Bytes;
-use cometbft_light_client_verifier::{types::{ValidatorSet, Validator}, predicates::ProdPredicates, operations::voting_power::ProdVotingPowerCalculator};
+use crate::{Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use cometbft::vote::Power;
 use cometbft::PublicKey;
 use cometbft::{block::signed_header::SignedHeader, validator::Set};
+use cometbft_light_client::{
+    predicates::VerificationPredicates,
+    types::{LightBlock, TrustThreshold},
+};
+use cometbft_light_client_verifier::{
+    operations::voting_power::ProdVotingPowerCalculator,
+    predicates::ProdPredicates,
+    types::{Validator, ValidatorSet},
+};
 use cometbft_proto::types::v1::LightBlock as TmLightBlock;
 use prost::Message;
+use revm_primitives::Bytes;
 
 pub const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
@@ -25,12 +32,15 @@ const VALIDATOR_VOTING_POWER_LENGTH: u64 = 8;
 const RELAYER_ADDRESS_LENGTH: u64 = 20;
 const RELAYER_BLS_KEY_LENGTH: u64 = 48;
 
-const SINGLE_VALIDATOR_BYTES_LENGTH: u64 =
-    VALIDATOR_PUBKEY_LENGTH + VALIDATOR_VOTING_POWER_LENGTH + RELAYER_ADDRESS_LENGTH + RELAYER_BLS_KEY_LENGTH;
+const SINGLE_VALIDATOR_BYTES_LENGTH: u64 = VALIDATOR_PUBKEY_LENGTH
+    + VALIDATOR_VOTING_POWER_LENGTH
+    + RELAYER_ADDRESS_LENGTH
+    + RELAYER_BLS_KEY_LENGTH;
 
-const MAX_CONSENSUS_STATE_LENGTH: u64 =
-    CHAIN_ID_LENGTH + HEIGHT_LENGTH + VALIDATOR_SET_HASH_LENGTH + 99 * SINGLE_VALIDATOR_BYTES_LENGTH;
-
+const MAX_CONSENSUS_STATE_LENGTH: u64 = CHAIN_ID_LENGTH
+    + HEIGHT_LENGTH
+    + VALIDATOR_SET_HASH_LENGTH
+    + 99 * SINGLE_VALIDATOR_BYTES_LENGTH;
 
 fn cometbft_light_block_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const COMETBFT_LIGHT_BLOCK_VALIDATION_BASE: u64 = 3_000;
@@ -53,42 +63,58 @@ fn cometbft_light_block_validation_run(input: &Bytes, gas_limit: u64) -> Precomp
         Ok(validator_set_changed) => validator_set_changed,
         Err(e) => return Err(e),
     };
-    
+
     let consensus_state_bytes = match consensus_state.encode() {
         Ok(cs) => cs,
         Err(e) => return Err(e),
     };
 
-    Ok((COMETBFT_LIGHT_BLOCK_VALIDATION_BASE, encode_light_block_validation_result(validator_set_changed, consensus_state_bytes)))
+    Ok((
+        COMETBFT_LIGHT_BLOCK_VALIDATION_BASE,
+        encode_light_block_validation_result(validator_set_changed, consensus_state_bytes),
+    ))
 }
 
 type ConvertLightBlockResult = Result<LightBlock, PrecompileError>;
 fn convert_light_block_from_proto(light_block_proto: &TmLightBlock) -> ConvertLightBlockResult {
-    let signed_header = match SignedHeader::try_from(light_block_proto.signed_header.as_ref().unwrap().clone()) {
-        Ok(sh) => sh.clone(),
-        Err(_) => return Err(Error::CometBftInvalidInput),
-    };
-   
-    let validator_set = match Set::try_from(light_block_proto.validator_set.as_ref().unwrap().clone()) {
-        Ok(vs) => vs.clone(),
-        Err(_) => return Err(Error::CometBftInvalidInput),
-    };
-    
+    let signed_header =
+        match SignedHeader::try_from(light_block_proto.signed_header.as_ref().unwrap().clone()) {
+            Ok(sh) => sh.clone(),
+            Err(_) => return Err(Error::CometBftInvalidInput),
+        };
+
+    let validator_set =
+        match Set::try_from(light_block_proto.validator_set.as_ref().unwrap().clone()) {
+            Ok(vs) => vs.clone(),
+            Err(_) => return Err(Error::CometBftInvalidInput),
+        };
+
     let next_validator_set = validator_set.clone();
     let peer_id = cometbft::node::Id::new([0u8; 20]);
-    Ok(LightBlock::new(signed_header, validator_set, next_validator_set, peer_id))
+    Ok(LightBlock::new(
+        signed_header,
+        validator_set,
+        next_validator_set,
+        peer_id,
+    ))
 }
 
 type DecodeLightBlockResult = Result<(ConsensusState, TmLightBlock), PrecompileError>;
-fn decode_light_block_validation_input(input: &Bytes) -> DecodeLightBlockResult{
+fn decode_light_block_validation_input(input: &Bytes) -> DecodeLightBlockResult {
     let input_length = input.len() as u64;
     if input_length < CONSENSUS_STATE_LENGTH_BYTES_LENGTH {
         return Err(Error::CometBftInvalidInput);
     }
 
-    let cs_length = u64::from_be_bytes(input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize - UINT64_TYPE_LENGTH as usize..CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize].try_into().unwrap());
+    let cs_length = u64::from_be_bytes(
+        input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize - UINT64_TYPE_LENGTH as usize
+            ..CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize]
+            .try_into()
+            .unwrap(),
+    );
     let input_length_checked = CONSENSUS_STATE_LENGTH_BYTES_LENGTH.checked_add(cs_length);
-    if input_length_checked.is_none() { // overflow
+    if input_length_checked.is_none() {
+        // overflow
         return Err(Error::CometBftInvalidInput);
     }
 
@@ -100,13 +126,15 @@ fn decode_light_block_validation_input(input: &Bytes) -> DecodeLightBlockResult{
         Ok(cs) => cs,
         Err(e) => return Err(e),
     };
-    
+
     let mut light_block_pb: TmLightBlock = TmLightBlock::default();
-    match light_block_pb.merge(&input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize +cs_length as usize..]) {
+    match light_block_pb
+        .merge(&input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize + cs_length as usize..])
+    {
         Ok(_) => (),
         Err(_) => return Err(Error::CometBftInvalidInput),
     };
-    
+
     Ok((consensus_state, light_block_pb))
 }
 
@@ -120,7 +148,14 @@ struct ConsensusState {
 }
 
 impl ConsensusState {
-    fn new(chain_id: String, height: u64, next_validator_set_hash: Bytes, validators: ValidatorSet, relayer_address: Vec<Bytes>, relayer_bls_key: Vec<Bytes>) -> Self {
+    fn new(
+        chain_id: String,
+        height: u64,
+        next_validator_set_hash: Bytes,
+        validators: ValidatorSet,
+        relayer_address: Vec<Bytes>,
+        relayer_bls_key: Vec<Bytes>,
+    ) -> Self {
         Self {
             chain_id,
             height,
@@ -142,31 +177,60 @@ impl ConsensusState {
         let trust_threshold_two_third = TrustThreshold::TWO_THIRDS;
         let trust_threshold_one_third = TrustThreshold::ONE_THIRD;
         if self.height + 1 == light_block.height().value() {
-            if self.next_validator_set_hash.ne(light_block.validators.hash().as_bytes()) {
+            if self
+                .next_validator_set_hash
+                .ne(light_block.validators.hash().as_bytes())
+            {
                 return Ok(false);
             }
             // Verify Commit Light Trusted
-            let result = vp.has_sufficient_validators_overlap(&light_block.signed_header, &light_block.validators,&trust_threshold_two_third, &voting_power_calculator);
+            let result = vp.has_sufficient_validators_overlap(
+                &light_block.signed_header,
+                &light_block.validators,
+                &trust_threshold_two_third,
+                &voting_power_calculator,
+            );
             if !result.is_ok() {
                 return Ok(false);
             }
         } else {
             // Verify Commit Light Trusting
-            let result = vp.has_sufficient_validators_overlap(&light_block.signed_header, &self.validators, &trust_threshold_one_third, &voting_power_calculator);
+            let result = vp.has_sufficient_validators_overlap(
+                &light_block.signed_header,
+                &self.validators,
+                &trust_threshold_one_third,
+                &voting_power_calculator,
+            );
             if !result.is_ok() {
                 return Ok(false);
             }
-            
+
             // Verify Commit Light
-            let result = vp.has_sufficient_validators_overlap(&light_block.signed_header, &light_block.validators,&trust_threshold_two_third, &voting_power_calculator);
+            let result = vp.has_sufficient_validators_overlap(
+                &light_block.signed_header,
+                &light_block.validators,
+                &trust_threshold_two_third,
+                &voting_power_calculator,
+            );
             if !result.is_ok() {
                 return Ok(false);
             }
         }
-        
-        let validator_set_changed = self.validators.hash().as_bytes().ne(light_block.validators.hash().as_bytes());
+
+        let validator_set_changed = self
+            .validators
+            .hash()
+            .as_bytes()
+            .ne(light_block.validators.hash().as_bytes());
         self.height = light_block.height().value();
-        self.next_validator_set_hash = Bytes::from(light_block.signed_header.header().next_validators_hash.as_bytes().to_vec());
+        self.next_validator_set_hash = Bytes::from(
+            light_block
+                .signed_header
+                .header()
+                .next_validators_hash
+                .as_bytes()
+                .to_vec(),
+        );
         self.validators = light_block.validators.clone();
 
         Ok(validator_set_changed)
@@ -174,7 +238,11 @@ impl ConsensusState {
 
     fn encode(&self) -> Result<Bytes, Error> {
         let validator_set_length = self.validators.validators().len();
-        let serialize_length = (CHAIN_ID_LENGTH + HEIGHT_LENGTH + VALIDATOR_SET_HASH_LENGTH + validator_set_length as u64 * SINGLE_VALIDATOR_BYTES_LENGTH) as usize;
+        let serialize_length = (CHAIN_ID_LENGTH
+            + HEIGHT_LENGTH
+            + VALIDATOR_SET_HASH_LENGTH
+            + validator_set_length as u64 * SINGLE_VALIDATOR_BYTES_LENGTH)
+            as usize;
         if serialize_length > MAX_CONSENSUS_STATE_LENGTH as usize {
             return Err(Error::CometBftEncodeConsensusStateFailed);
         }
@@ -191,29 +259,35 @@ impl ConsensusState {
         }
         let mut filled_chain_id = [0u8; 32];
         filled_chain_id[..chain_id_bytes.len()].copy_from_slice(chain_id_bytes);
-        output[pos..pos + CHAIN_ID_LENGTH as usize].copy_from_slice(filled_chain_id.to_vec().as_slice());
+        output[pos..pos + CHAIN_ID_LENGTH as usize]
+            .copy_from_slice(filled_chain_id.to_vec().as_slice());
         pos += CHAIN_ID_LENGTH as usize;
 
         output[pos..pos + HEIGHT_LENGTH as usize].copy_from_slice(&self.height.to_be_bytes());
         pos += HEIGHT_LENGTH as usize;
 
-        output[pos..pos + VALIDATOR_SET_HASH_LENGTH as usize].copy_from_slice(self.next_validator_set_hash.as_ref());
+        output[pos..pos + VALIDATOR_SET_HASH_LENGTH as usize]
+            .copy_from_slice(self.next_validator_set_hash.as_ref());
         pos += VALIDATOR_SET_HASH_LENGTH as usize;
 
         for i in 0..validator_set_length {
             let validator = &self.validators.validators()[i];
             let voting_power = validator.power();
 
-            output[pos..pos + VALIDATOR_PUBKEY_LENGTH as usize].copy_from_slice(&validator.pub_key.to_bytes());
+            output[pos..pos + VALIDATOR_PUBKEY_LENGTH as usize]
+                .copy_from_slice(&validator.pub_key.to_bytes());
             pos += VALIDATOR_PUBKEY_LENGTH as usize;
 
-            output[pos..pos + VALIDATOR_VOTING_POWER_LENGTH as usize].copy_from_slice(&voting_power.to_be_bytes());
+            output[pos..pos + VALIDATOR_VOTING_POWER_LENGTH as usize]
+                .copy_from_slice(&voting_power.to_be_bytes());
             pos += VALIDATOR_VOTING_POWER_LENGTH as usize;
 
-            output[pos..pos + RELAYER_ADDRESS_LENGTH as usize].copy_from_slice(self.relayer_address[i].as_ref());
+            output[pos..pos + RELAYER_ADDRESS_LENGTH as usize]
+                .copy_from_slice(self.relayer_address[i].as_ref());
             pos += RELAYER_ADDRESS_LENGTH as usize;
 
-            output[pos..pos + RELAYER_BLS_KEY_LENGTH as usize].copy_from_slice(self.relayer_bls_key[i].as_ref());
+            output[pos..pos + RELAYER_BLS_KEY_LENGTH as usize]
+                .copy_from_slice(self.relayer_bls_key[i].as_ref());
             pos += RELAYER_BLS_KEY_LENGTH as usize;
         }
 
@@ -225,10 +299,12 @@ type DecodeConsensusStateResult = Result<ConsensusState, PrecompileError>;
 /// input:
 /// | chainID   | height   | nextValidatorSetHash | [{validator pubkey, voting power, relayer address, relayer bls pubkey}] |
 /// | 32 bytes  | 8 bytes  | 32 bytes             | [{32 bytes, 8 bytes, 20 bytes, 48 bytes}]     
-fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult{
-    let minimum_length = CHAIN_ID_LENGTH+HEIGHT_LENGTH+VALIDATOR_SET_HASH_LENGTH;
-	let input_length = input.len() as u64;
-	if input_length <= minimum_length || (input_length-minimum_length)%SINGLE_VALIDATOR_BYTES_LENGTH != 0 {
+fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
+    let minimum_length = CHAIN_ID_LENGTH + HEIGHT_LENGTH + VALIDATOR_SET_HASH_LENGTH;
+    let input_length = input.len() as u64;
+    if input_length <= minimum_length
+        || (input_length - minimum_length) % SINGLE_VALIDATOR_BYTES_LENGTH != 0
+    {
         return Err(Error::CometBftInvalidInput);
     }
 
@@ -238,23 +314,44 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult{
     let chain_id = chain_id.trim_end_matches('\0').to_owned();
     pos += CHAIN_ID_LENGTH;
 
-    let height = u64::from_be_bytes(input[pos as usize..(pos+HEIGHT_LENGTH) as usize].try_into().unwrap());
+    let height = u64::from_be_bytes(
+        input[pos as usize..(pos + HEIGHT_LENGTH) as usize]
+            .try_into()
+            .unwrap(),
+    );
     pos += HEIGHT_LENGTH;
 
-    let next_validator_set_hash = Bytes::from(input[pos as usize..(pos+VALIDATOR_SET_HASH_LENGTH) as usize].to_vec());
+    let next_validator_set_hash =
+        Bytes::from(input[pos as usize..(pos + VALIDATOR_SET_HASH_LENGTH) as usize].to_vec());
     pos += VALIDATOR_SET_HASH_LENGTH;
-    
+
     let validator_set_length = (input_length - minimum_length) / SINGLE_VALIDATOR_BYTES_LENGTH;
     let validator_set_bytes = input[pos as usize..].to_vec();
     let mut validator_set = Vec::with_capacity(validator_set_length as usize);
     let mut relayer_address_set = Vec::with_capacity(validator_set_length as usize);
     let mut relayer_bls_key_set = Vec::with_capacity(validator_set_length as usize);
     for i in 0..validator_set_length {
-        let validator = &validator_set_bytes[i as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize..(i+1) as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize];
+        let validator = &validator_set_bytes[i as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize
+            ..(i + 1) as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize];
 
-        let voting_power = u64::from_be_bytes(validator[VALIDATOR_PUBKEY_LENGTH as usize..(VALIDATOR_PUBKEY_LENGTH+VALIDATOR_VOTING_POWER_LENGTH) as usize].try_into().unwrap());
-        let relayer_address = Bytes::from(validator[(VALIDATOR_PUBKEY_LENGTH+VALIDATOR_VOTING_POWER_LENGTH) as usize..(VALIDATOR_PUBKEY_LENGTH+VALIDATOR_VOTING_POWER_LENGTH+RELAYER_ADDRESS_LENGTH) as usize].to_vec());
-        let relayer_bls_key = Bytes::from(validator[(VALIDATOR_PUBKEY_LENGTH+VALIDATOR_VOTING_POWER_LENGTH+RELAYER_ADDRESS_LENGTH) as usize..].to_vec());
+        let voting_power = u64::from_be_bytes(
+            validator[VALIDATOR_PUBKEY_LENGTH as usize
+                ..(VALIDATOR_PUBKEY_LENGTH + VALIDATOR_VOTING_POWER_LENGTH) as usize]
+                .try_into()
+                .unwrap(),
+        );
+        let relayer_address = Bytes::from(
+            validator[(VALIDATOR_PUBKEY_LENGTH + VALIDATOR_VOTING_POWER_LENGTH) as usize
+                ..(VALIDATOR_PUBKEY_LENGTH + VALIDATOR_VOTING_POWER_LENGTH + RELAYER_ADDRESS_LENGTH)
+                    as usize]
+                .to_vec(),
+        );
+        let relayer_bls_key = Bytes::from(
+            validator[(VALIDATOR_PUBKEY_LENGTH
+                + VALIDATOR_VOTING_POWER_LENGTH
+                + RELAYER_ADDRESS_LENGTH) as usize..]
+                .to_vec(),
+        );
         let pk = match PublicKey::from_raw_ed25519(&validator[..VALIDATOR_PUBKEY_LENGTH as usize]) {
             Some(pk) => pk,
             None => return Err(Error::CometBftInvalidInput),
@@ -266,13 +363,23 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult{
         relayer_bls_key_set.push(relayer_bls_key);
     }
 
-    Ok(ConsensusState::new(chain_id, height, next_validator_set_hash,  ValidatorSet::without_proposer(validator_set), relayer_address_set, relayer_bls_key_set))
+    Ok(ConsensusState::new(
+        chain_id,
+        height,
+        next_validator_set_hash,
+        ValidatorSet::without_proposer(validator_set),
+        relayer_address_set,
+        relayer_bls_key_set,
+    ))
 }
 
 /// output:
 /// | validatorSetChanged | empty      | consensusStateBytesLength |  new consensusState |
 /// | 1 byte              | 23 bytes   | 8 bytes                   |                     |
-fn encode_light_block_validation_result(validator_set_changed: bool, consensus_state_bytes: Bytes) -> Bytes {
+fn encode_light_block_validation_result(
+    validator_set_changed: bool,
+    consensus_state_bytes: Bytes,
+) -> Bytes {
     let mut output = Vec::new();
     output.resize(VALIDATE_RESULT_METADATA_LENGTH as usize, 0);
     output[0] = if validator_set_changed { 1 } else { 0 };
@@ -282,24 +389,36 @@ fn encode_light_block_validation_result(validator_set_changed: bool, consensus_s
 
 #[cfg(test)]
 mod tests {
-    use revm_primitives::hex;
     use super::*;
+    use revm_primitives::hex;
 
     #[test]
     fn test_encode_consensus_state() {
         {
             let chain_id = "chain_9000-121".to_string();
             let height = 1;
-            let next_validator_set_hash = Bytes::from(hex!("0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"));
+            let next_validator_set_hash = Bytes::from(hex!(
+                "0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"
+            ));
             let mut validators_info = Vec::new();
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
             let relayer_address = Bytes::from(hex!("B32d0723583040F3A16D1380D1e6AA874cD1bdF7"));
-            let cs = ConsensusState::new(chain_id, height, next_validator_set_hash, validator_set, vec![relayer_address.clone()], vec![bls_pub_key.clone()]);
+            let cs = ConsensusState::new(
+                chain_id,
+                height,
+                next_validator_set_hash,
+                validator_set,
+                vec![relayer_address.clone()],
+                vec![bls_pub_key.clone()],
+            );
 
             let expected_output = Bytes::from(hex!("636861696e5f393030302d31323100000000000000000000000000000000000000000000000000010ce856b1dc9cdcf3bf2478291cf02c62aeeb3679889e9866931bf1fb05a10edac3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e0000000000002710b32d0723583040f3a16d1380d1e6aa874cd1bdf7a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
             let cs_bytes = cs.encode().unwrap();
@@ -308,36 +427,59 @@ mod tests {
         {
             let chain_id = "chain_9000-121".to_string();
             let height = 1;
-            let next_validator_set_hash = Bytes::from(hex!("A5F1AF4874227F1CDBE5240259A365AD86484A4255BFD65E2A0222D733FCDBC3"));
+            let next_validator_set_hash = Bytes::from(hex!(
+                "A5F1AF4874227F1CDBE5240259A365AD86484A4255BFD65E2A0222D733FCDBC3"
+            ));
             let mut validators_info = Vec::new();
             let mut bls_pub_keys = Vec::new();
             let mut relayer_addresses = Vec::new();
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
-            relayer_addresses.push(Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "d5e63aeee6e6fa122a6a23a6e0fca87701ba1541"
+            )));
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
-            relayer_addresses.push(Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "6fd1ceb5a48579f322605220d4325bd9ff90d5fa"
+            )));
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
-            relayer_addresses.push(Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "97376a436bbf54e0f6949b57aa821a90a749920a"
+            )));
             let validator_set = ValidatorSet::without_proposer(validators_info);
-            let cs = ConsensusState::new(chain_id, height, next_validator_set_hash, validator_set, relayer_addresses,bls_pub_keys);
+            let cs = ConsensusState::new(
+                chain_id,
+                height,
+                next_validator_set_hash,
+                validator_set,
+                relayer_addresses,
+                bls_pub_keys,
+            );
 
             let expected_output = Bytes::from(hex!("636861696e5f393030302d3132310000000000000000000000000000000000000000000000000001a5f1af4874227f1cdbe5240259a365ad86484a4255bfd65e2a0222d733fcdbc320cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb970000000000002710d5e63aeee6e6fa122a6a23a6e0fca87701ba1541aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb8616b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c527000000000000027106fd1ceb5a48579f322605220d4325bd9ff90d5fab31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda000000000000271097376a436bbf54e0f6949b57aa821a90a749920ab32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867"));
             let cs_bytes = cs.encode().unwrap();
             assert_eq!(cs_bytes, expected_output);
         }
-
     }
 
     #[test]
@@ -345,17 +487,22 @@ mod tests {
         {
             let chain_id = "chain_9000-121".to_string();
             let height = 1;
-            let next_validator_set_hash = Bytes::from(hex!("0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"));
+            let next_validator_set_hash = Bytes::from(hex!(
+                "0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"
+            ));
             let mut validators_info = Vec::new();
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
             let relayer_address = Bytes::from(hex!("B32d0723583040F3A16D1380D1e6AA874cD1bdF7"));
             let cs_bytes = Bytes::from(hex!("636861696e5f393030302d31323100000000000000000000000000000000000000000000000000010ce856b1dc9cdcf3bf2478291cf02c62aeeb3679889e9866931bf1fb05a10edac3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e0000000000002710b32d0723583040f3a16d1380d1e6aa874cd1bdf7a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
-            let cs = match decode_consensus_state(&cs_bytes){
+            let cs = match decode_consensus_state(&cs_bytes) {
                 Ok(cs) => cs,
                 Err(_) => panic!("decode consensus state failed"),
             };
@@ -369,31 +516,48 @@ mod tests {
         {
             let chain_id = "chain_9000-121".to_string();
             let height = 1;
-            let next_validator_set_hash = Bytes::from(hex!("A5F1AF4874227F1CDBE5240259A365AD86484A4255BFD65E2A0222D733FCDBC3"));
+            let next_validator_set_hash = Bytes::from(hex!(
+                "A5F1AF4874227F1CDBE5240259A365AD86484A4255BFD65E2A0222D733FCDBC3"
+            ));
             let mut validators_info = Vec::new();
             let mut bls_pub_keys = Vec::new();
             let mut relayer_addresses = Vec::new();
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
-            relayer_addresses.push(Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "d5e63aeee6e6fa122a6a23a6e0fca87701ba1541"
+            )));
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
-            relayer_addresses.push(Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "6fd1ceb5a48579f322605220d4325bd9ff90d5fa"
+            )));
             validators_info.push(cometbft::validator::Info::new(
-                PublicKey::from_raw_ed25519(&hex!("919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda")).unwrap(),
+                PublicKey::from_raw_ed25519(&hex!(
+                    "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
+                ))
+                .unwrap(),
                 cometbft::vote::Power::from(10000 as u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
-            relayer_addresses.push(Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "97376a436bbf54e0f6949b57aa821a90a749920a"
+            )));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let cs_bytes = Bytes::from(hex!("636861696e5f393030302d3132310000000000000000000000000000000000000000000000000001a5f1af4874227f1cdbe5240259a365ad86484a4255bfd65e2a0222d733fcdbc320cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb970000000000002710d5e63aeee6e6fa122a6a23a6e0fca87701ba1541aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb8616b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c527000000000000027106fd1ceb5a48579f322605220d4325bd9ff90d5fab31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda000000000000271097376a436bbf54e0f6949b57aa821a90a749920ab32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867"));
-            let cs = match decode_consensus_state(&cs_bytes){
+            let cs = match decode_consensus_state(&cs_bytes) {
                 Ok(cs) => cs,
                 Err(_) => panic!("decode consensus state failed"),
             };
@@ -415,7 +579,7 @@ mod tests {
     fn test_apply_light_block() {
         {
             let cs_bytes = Bytes::from(hex!("677265656e6669656c645f393030302d3132310000000000000000000000000000000000000000013c350cd55b99dc6c2b7da9bef5410fbfb869fede858e7b95bf7ca294e228bb40e33f6e876d63791ebd05ff617a1b4f4ad1aa2ce65e3c3a9cdfb33e0ffa7e8423000000000098968015154514f68ce65a0d9eecc578c0ab12da0a2a28a0805521b5b7ae56eb3fb24555efbfe59e1622bfe9f7be8c9022e9b3f2442739c1ce870b9adee169afe60f674edd7c86451c5363d89052fde8351895eeea166ce5373c36e31b518ed191d0c599aa0f5b0000000000989680432f6c4908a9aa5f3444421f466b11645235c99b831b2a2de9e504d7ea299e52a202ce529808618eb3bfc0addf13d8c5f2df821d81e18f9bc61583510b322d067d46323b0a572635c06a049c0a2a929e3c8184a50cf6a8b95708c25834ade456f399015a0000000000989680864cb9828254d712f8e59b164fc6a9402dc4e6c59065e38cff24f5323c8c5da888a0f97e5ee4ba1e11b0674b0a0d06204c1dfa247c370cd4be3e799fc4f6f48d977ac7ca"));
-            let mut cs = match decode_consensus_state(&cs_bytes){
+            let mut cs = match decode_consensus_state(&cs_bytes) {
                 Ok(cs) => cs,
                 Err(_) => panic!("decode consensus state failed"),
             };
@@ -436,13 +600,13 @@ mod tests {
                 Ok(validator_set_changed) => {
                     assert_eq!(validator_set_changed, expected_validator_set_changed);
                     assert_eq!(cs.height, expected_height);
-                },
+                }
                 Err(_) => panic!("apply light block failed"),
             }
         }
         {
             let cs_bytes = Bytes::from(hex!("677265656e6669656c645f393030302d313734310000000000000000000000000000000000000001af6b801dda578dddfa4da1d5d67fd1b32510db24ec271346fc573e9242b01c9a112b51dda2d336246bdc0cc51407ba0cb0e5087be0db5f1cdc3285bbaa8e647500000000000003e84202722cf6a34d727be762b46825b0d26b6263a0a9355ebf3c24bedac5a357a56feeb2cd8b6fed9f14cca15c3091f523b9fb21183b4bb31eb482a0321885e3f57072156448e2b2f7d9a3e7b668757d9cc0bbd28cd674c34ed1c2ed75c5de3b6a8f8cad4600000000000003e8668a0acd8f6db5cae959a0e02132f4d6a672c4d7a4726b542012cc8023ee07b29ab3971cc999d8751bbd16f23413968afcdb070ed66ab47e6e1842bf875bef21dfc5b8af6813bfd82860d361e339bd1ae2f801b6d6ee46b8497a3d51c80b50b6160ea1cc00000000000003e80dfa99423d3084c596c5e3bd6bcb4f654516517b8d4786703c56b300b70f085c0d0482e5d6a3c7208883f0ec8abd2de893f71d18e8f919e7ab198499201d87f92c57ebce83ed2b763bb872e9bc148fb216fd5c93b18819670d9a946ae4b3075672d726b800000000000003e824aab6f85470ff73e3048c64083a09e980d4cb7f8146d231a7b2051c5f7a9c07ab6e6bfe277bd5f4a94f901fe6ee7a6b6bd8479e9e5e448de4b1b33d5ddd74194c86b3852cc140a3f08a9c4149efd45643202f8bef2ad7eecf53e58951c6df6fd932004b00000000000003e84998f6ef8d999a0f36a851bfa29dbcf0364dd65695c286deb3f1657664859d59876bf1ec5a288f6e66e18b37b8a2a1e6ee4a3ef8fa50784d8b758d0c3e70a7cdfe65ab5d"));
-            let mut cs = match decode_consensus_state(&cs_bytes){
+            let mut cs = match decode_consensus_state(&cs_bytes) {
                 Ok(cs) => cs,
                 Err(_) => panic!("decode consensus state failed"),
             };
@@ -463,7 +627,7 @@ mod tests {
                 Ok(validator_set_changed) => {
                     assert_eq!(validator_set_changed, expected_validator_set_changed);
                     assert_eq!(cs.height, expected_height);
-                },
+                }
                 Err(_) => panic!("apply light block failed"),
             }
         }
