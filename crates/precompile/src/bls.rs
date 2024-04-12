@@ -1,6 +1,7 @@
 use crate::{Error, Precompile, PrecompileResult, PrecompileWithAddress};
 use bls_on_arkworks as bls;
 use revm_primitives::Bytes;
+use std::vec::Vec;
 
 pub const BLS_SIGNATURE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(102),
