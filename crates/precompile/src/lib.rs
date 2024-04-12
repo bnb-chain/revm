@@ -11,7 +11,9 @@
 extern crate alloc as std;
 
 pub mod blake2;
+mod bls;
 pub mod bn128;
+mod cometbft;
 pub mod hash;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
@@ -19,8 +21,6 @@ pub mod kzg_point_evaluation;
 pub mod modexp;
 pub mod secp256k1;
 pub mod utilities;
-mod bls;
-mod cometbft;
 
 use core::hash::Hash;
 use once_cell::race::OnceBox;
