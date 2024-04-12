@@ -125,7 +125,7 @@ fn decode_light_block_validation_input(input: &Bytes) -> DecodeLightBlockResult 
         return Err(Error::CometBftInvalidInput);
     }
 
-    let consensus_state = match decode_consensus_state(&input) {
+    let consensus_state = match decode_consensus_state(input) {
         Ok(cs) => cs,
         Err(e) => return Err(e),
     };
@@ -170,7 +170,6 @@ impl ConsensusState {
     }
 
     fn apply_light_block(&mut self, light_block: &LightBlock) -> Result<bool, Error> {
-        // TODO: enhance checking
         if light_block.signed_header.header().chain_id.as_str() != self.chain_id {
             return Ok(false);
         }
@@ -193,7 +192,7 @@ impl ConsensusState {
                 &trust_threshold_two_third,
                 &voting_power_calculator,
             );
-            if !result.is_ok() {
+            if result.is_err() {
                 return Ok(false);
             }
         } else {
@@ -204,7 +203,7 @@ impl ConsensusState {
                 &trust_threshold_one_third,
                 &voting_power_calculator,
             );
-            if !result.is_ok() {
+            if result.is_err() {
                 return Ok(false);
             }
 
@@ -215,7 +214,7 @@ impl ConsensusState {
                 &trust_threshold_two_third,
                 &voting_power_calculator,
             );
-            if !result.is_ok() {
+            if result.is_err() {
                 return Ok(false);
             }
         }
@@ -253,8 +252,7 @@ impl ConsensusState {
             return Err(Error::CometBftEncodeConsensusStateFailed);
         }
 
-        let mut output = Vec::new();
-        output.resize(serialize_length, 0);
+        let mut output = vec![0; serialize_length];
         let mut pos: usize = 0;
         let chain_id_bytes = self.chain_id.as_bytes();
         if chain_id_bytes.len() > CHAIN_ID_LENGTH as usize {
@@ -311,7 +309,7 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
         return Err(Error::CometBftInvalidInput);
     }
 
-    let mut pos = 0 as u64;
+    let mut pos = 0_u64;
     let chain_id = &input[..CHAIN_ID_LENGTH as usize];
     let chain_id = String::from_utf8_lossy(chain_id);
     let chain_id = chain_id.trim_end_matches('\0').to_owned();
@@ -383,8 +381,7 @@ fn encode_light_block_validation_result(
     validator_set_changed: bool,
     consensus_state_bytes: Bytes,
 ) -> Bytes {
-    let mut output = Vec::new();
-    output.resize(VALIDATE_RESULT_METADATA_LENGTH as usize, 0);
+    let mut output = vec![0; VALIDATE_RESULT_METADATA_LENGTH as usize];
     output[0] = if validator_set_changed { 1 } else { 0 };
     output[1..].copy_from_slice(consensus_state_bytes.as_ref());
     Bytes::from(output)
@@ -409,7 +406,7 @@ mod tests {
                     "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
@@ -441,7 +438,7 @@ mod tests {
                     "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -452,7 +449,7 @@ mod tests {
                     "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -463,7 +460,7 @@ mod tests {
                     "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -499,7 +496,7 @@ mod tests {
                     "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
@@ -530,7 +527,7 @@ mod tests {
                     "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -541,7 +538,7 @@ mod tests {
                     "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -552,7 +549,7 @@ mod tests {
                     "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
                 ))
                 .unwrap(),
-                cometbft::vote::Power::from(10000 as u32),
+                cometbft::vote::Power::from(10000_u32),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
             relayer_addresses.push(Bytes::from(hex!(
@@ -596,7 +593,7 @@ mod tests {
                 Ok(light_block) => light_block,
                 Err(_) => panic!("convert light block from proto failed"),
             };
-            let expected_height = 1 as u64;
+            let expected_height = 1_u64;
             let expected_validator_set_changed = false;
 
             match cs.apply_light_block(&light_block) {
@@ -623,7 +620,7 @@ mod tests {
                 Ok(light_block) => light_block,
                 Err(_) => panic!("convert light block from proto failed"),
             };
-            let expected_height = 273513 as u64;
+            let expected_height = 273513_u64;
             let expected_validator_set_changed = true;
 
             match cs.apply_light_block(&light_block) {

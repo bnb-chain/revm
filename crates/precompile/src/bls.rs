@@ -59,14 +59,10 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
 
     // verify signature
     let mut output = Bytes::from(vec![1]);
-    if pub_keys.len() == 1 {
-        if !bls::verify(&pub_keys[0], msg_hash, signature, &BLS_DST.to_vec()) {
-            output = Bytes::from(vec![0]);
-        }
-    } else {
-        if !bls::aggregate_verify(pub_keys, msg_hashes, signature, &BLS_DST.to_vec()) {
-            output = Bytes::from(vec![0]);
-        }
+    if (pub_keys.len() == 1 && !bls::verify(&pub_keys[0], msg_hash, signature, &BLS_DST.to_vec()))
+        || !bls::aggregate_verify(pub_keys, msg_hashes, signature, &BLS_DST.to_vec())
+    {
+        output = Bytes::from(vec![0]);
     }
 
     Ok((cost, output))
@@ -85,9 +81,8 @@ fn calc_gas_cost(input: &Bytes) -> u64 {
     }
 
     let pub_key_number = (input_length - msg_length) / single_pubkey_length;
-    let cost = BLS_SIGNATURE_VALIDATION_BASE + BLS_SIGNATURE_VALIDATION_PER_KER * pub_key_number;
 
-    return cost;
+    BLS_SIGNATURE_VALIDATION_BASE + BLS_SIGNATURE_VALIDATION_PER_KER * pub_key_number
 }
 
 #[cfg(test)]
