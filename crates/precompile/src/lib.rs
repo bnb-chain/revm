@@ -21,6 +21,10 @@ pub mod kzg_point_evaluation;
 pub mod modexp;
 pub mod secp256k1;
 pub mod utilities;
+mod tendermint;
+mod iavl;
+mod tm_secp256k1;
+mod double_sign;
 
 use core::hash::Hash;
 use once_cell::race::OnceBox;
@@ -67,6 +71,7 @@ impl Precompiles {
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
             PrecompileSpecId::FERMAT => Self::fermat(),
+            PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
@@ -147,6 +152,28 @@ impl Precompiles {
                 precompiles.extend([
                     bls::BLS_SIGNATURE_VALIDATION,
                     cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for Feynman sepc.
+    ///
+    /// TODO: how to add precompiles for BSC?
+    pub fn feynman() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::fermat().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION,
+                    iavl::IAVL_PROOF_VALIDATION,
+                    tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER,
+                    double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION,
                 ]);
                 precompiles
             };
@@ -254,6 +281,7 @@ pub enum PrecompileSpecId {
     ISTANBUL,
     BERLIN,
     FERMAT,
+    FEYNMAN, // BSC FEYNMAN HARDFORK
     CANCUN,
     LATEST,
 }
@@ -277,6 +305,8 @@ impl PrecompileSpecId {
             ECOTONE => Self::CANCUN,
             #[cfg(feature = "optimism")]
             FERMAT => Self::FERMAT,
+            #[cfg(feature = "bsc")]
+            FEYNMAN => Self::FERMAT
         }
     }
 }

@@ -63,6 +63,7 @@ pub enum SpecId {
     CANCUN = 20,
     ECOTONE = 21,
     FERMAT = 22,
+    FEYNMAN = 23, //TODO: add other hardforks from BSC
     #[default]
     LATEST = u8::MAX,
 }
@@ -110,6 +111,8 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fermat" => SpecId::FERMAT,
+            #[cfg(feature = "bsc")]
+            "FEYNMAN" => SpecId::FEYNMAN, //TODO: add other hardforks from BSC
             _ => Self::LATEST,
         }
     }
@@ -169,6 +172,10 @@ spec!(CANYON, CanyonSpec);
 spec!(ECOTONE, EcotoneSpec);
 #[cfg(feature = "optimism")]
 spec!(FERMAT, FermatSpec);
+
+// BSC Hardforks
+#[cfg(feature = "bsc")]
+spec!(FEYNMAN, FeynmanSpec); //TODO: add other hardforks from BSC
 
 #[macro_export]
 macro_rules! spec_to_generic {
