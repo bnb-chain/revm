@@ -133,6 +133,8 @@ impl From<&str> for SpecId {
             #[cfg(feature = "optimism")]
             "Fermat" => SpecId::FERMAT,
             #[cfg(feature = "bsc")]
+            "LUBAN" => SpecId::LUBAN, //TODO: add other hardforks from BSC
+            #[cfg(feature = "bsc")]
             "FEYNMAN" => SpecId::FEYNMAN, //TODO: add other hardforks from BSC
             _ => Self::LATEST,
         }
