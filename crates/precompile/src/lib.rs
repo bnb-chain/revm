@@ -56,6 +56,7 @@ impl PrecompileOutput {
         }
     }
 }
+
 #[derive(Clone, Default, Debug)]
 pub struct Precompiles {
     /// Precompiles.
@@ -71,6 +72,7 @@ impl Precompiles {
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
             PrecompileSpecId::FERMAT => Self::fermat(),
+            PrecompileSpecId::LUBAN => Self::luban(),
             PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::LATEST => Self::latest(),
@@ -123,6 +125,13 @@ impl Precompiles {
                 bn128::mul::ISTANBUL,
                 bn128::pair::ISTANBUL,
             ]);
+
+            #[cfg(feature = "bsc")]
+            precompiles.extend([
+                tendermint::TENDERMINT_HEADER_VALIDATION,
+                iavl::IAVL_PROOF_VALIDATION,
+            ]);
+
             Box::new(precompiles)
         })
     }
@@ -160,18 +169,32 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for Feynman sepc.
-    ///
-    /// TODO: how to add precompiles for BSC?
-    pub fn feynman() -> &'static Self {
+    /// Returns precompiles for Luban sepc.
+    pub fn luban() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::fermat().clone();
+            let precompiles = Self::berlin().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
-                    tendermint::TENDERMINT_HEADER_VALIDATION,
-                    iavl::IAVL_PROOF_VALIDATION,
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for Feynman sepc.
+    pub fn feynman() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::luban().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
                     tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER,
                     double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION,
                 ]);
@@ -193,7 +216,7 @@ impl Precompiles {
 
             // Don't include KZG point evaluation precompile in no_std builds.
             #[cfg(feature = "c-kzg")]
-            let precompiles = {
+                let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
                     // EIP-4844: Shard Blob Transactions
@@ -213,13 +236,13 @@ impl Precompiles {
 
     /// Returns an iterator over the precompiles addresses.
     #[inline]
-    pub fn addresses(&self) -> impl Iterator<Item = &Address> {
+    pub fn addresses(&self) -> impl Iterator<Item=&Address> {
         self.inner.keys()
     }
 
     /// Consumes the type and returns all precompile addresses.
     #[inline]
-    pub fn into_addresses(self) -> impl Iterator<Item = Address> {
+    pub fn into_addresses(self) -> impl Iterator<Item=Address> {
         self.inner.into_keys()
     }
 
@@ -254,7 +277,7 @@ impl Precompiles {
     /// Extends the precompiles with the given precompiles.
     ///
     /// Other precompiles with overwrite existing precompiles.
-    pub fn extend(&mut self, other: impl IntoIterator<Item = PrecompileWithAddress>) {
+    pub fn extend(&mut self, other: impl IntoIterator<Item=PrecompileWithAddress>) {
         self.inner.extend(other.into_iter().map(Into::into));
     }
 }
@@ -281,7 +304,11 @@ pub enum PrecompileSpecId {
     ISTANBUL,
     BERLIN,
     FERMAT,
-    FEYNMAN, // BSC FEYNMAN HARDFORK
+
+    LUBAN,
+    // BSC LUBAN HARDFORK
+    FEYNMAN,
+    // BSC FEYNMAN HARDFORK
     CANCUN,
     LATEST,
 }
@@ -306,7 +333,9 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             FERMAT => Self::FERMAT,
             #[cfg(feature = "bsc")]
-            FEYNMAN => Self::FERMAT
+            LUBAN => Self::LUBAN,
+            #[cfg(feature = "bsc")]
+            FEYNMAN => Self::FEYNMAN
         }
     }
 }
