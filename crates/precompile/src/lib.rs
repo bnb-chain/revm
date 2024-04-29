@@ -171,6 +171,10 @@ impl Precompiles {
                 precompiles.extend([
                     // EIP-4844: Shard Blob Transactions
                     kzg_point_evaluation::POINT_EVALUATION,
+                    #[cfg(feature = "opbnb")]
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    #[cfg(feature = "opbnb")]
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
                 ]);
                 precompiles
             };
