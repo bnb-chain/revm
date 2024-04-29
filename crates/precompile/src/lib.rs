@@ -279,7 +279,7 @@ impl PrecompileSpecId {
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
             ECOTONE => Self::CANCUN,
-            #[cfg(feature = "optimism")]
+            #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
         }
     }

@@ -58,11 +58,11 @@ pub enum SpecId {
     MERGE = 15,
     BEDROCK = 16,
     REGOLITH = 17,
-    SHANGHAI = 18,
-    CANYON = 19,
-    CANCUN = 20,
-    ECOTONE = 21,
-    FERMAT = 22,
+    FERMAT = 18,
+    SHANGHAI = 19,
+    CANYON = 20,
+    CANCUN = 21,
+    ECOTONE = 22,
     #[default]
     LATEST = u8::MAX,
 }
@@ -104,12 +104,12 @@ impl From<&str> for SpecId {
             "Bedrock" => SpecId::BEDROCK,
             #[cfg(feature = "optimism")]
             "Regolith" => SpecId::REGOLITH,
+            #[cfg(feature = "opbnb")]
+            "Fermat" => SpecId::FERMAT,
             #[cfg(feature = "optimism")]
             "Canyon" => SpecId::CANYON,
             #[cfg(feature = "optimism")]
             "Ecotone" => SpecId::ECOTONE,
-            #[cfg(feature = "optimism")]
-            "Fermat" => SpecId::FERMAT,
             _ => Self::LATEST,
         }
     }
@@ -140,6 +140,8 @@ impl From<SpecId> for &'static str {
             SpecId::BEDROCK => "Bedrock",
             #[cfg(feature = "optimism")]
             SpecId::REGOLITH => "Regolith",
+            #[cfg(feature = "opbnb")]
+            SpecId::FERMAT => "Fermat",
             #[cfg(feature = "optimism")]
             SpecId::CANYON => "Canyon",
             #[cfg(feature = "optimism")]
@@ -201,7 +203,7 @@ spec!(REGOLITH, RegolithSpec);
 spec!(CANYON, CanyonSpec);
 #[cfg(feature = "optimism")]
 spec!(ECOTONE, EcotoneSpec);
-#[cfg(feature = "optimism")]
+#[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
 
 #[macro_export]
