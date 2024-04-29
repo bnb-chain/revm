@@ -332,9 +332,9 @@ impl PrecompileSpecId {
             ECOTONE => Self::CANCUN,
             #[cfg(feature = "optimism")]
             FERMAT => Self::FERMAT,
-            #[cfg(feature = "bsc")]
+            //#[cfg(feature = "bsc")]
             LUBAN => Self::LUBAN,
-            #[cfg(feature = "bsc")]
+            //#[cfg(feature = "bsc")]
             FEYNMAN => Self::FEYNMAN
         }
     }

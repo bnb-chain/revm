@@ -46,6 +46,10 @@ pub enum SpecId {
     // Shanghai	            17034870 (TS: 1681338455)
     CANCUN = 17,
     // Cancun	                TBD
+    LUBAN = 18,
+    // Luban
+    FEYNMAN = 19,
+    // Feynman
     #[default]
     LATEST = u8::MAX,
 }
@@ -197,7 +201,9 @@ spec!(ECOTONE, EcotoneSpec);
 spec!(FERMAT, FermatSpec);
 
 // BSC Hardforks
-#[cfg(feature = "bsc")]
+//#[cfg(feature = "bsc")]
+spec!(LUBAN, LubanSpec);
+//#[cfg(feature = "bsc")]
 spec!(FEYNMAN, FeynmanSpec); //TODO: add other hardforks from BSC
 
 #[macro_export]
@@ -253,6 +259,14 @@ macro_rules! spec_to_generic {
             }
             $crate::SpecId::CANCUN => {
                 use $crate::CancunSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::LUBAN => {
+                use $crate::LubanSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::FEYNMAN => {
+                use $crate::FeynmanSpec as SPEC;
                 $e
             }
             $crate::SpecId::LATEST => {
