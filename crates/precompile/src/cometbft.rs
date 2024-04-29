@@ -125,7 +125,11 @@ fn decode_light_block_validation_input(input: &Bytes) -> DecodeLightBlockResult 
         return Err(Error::CometBftInvalidInput);
     }
 
-    let decode_input = Bytes::from(input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize..(CONSENSUS_STATE_LENGTH_BYTES_LENGTH+cs_length) as usize].to_vec());
+    let decode_input = Bytes::from(
+        input[CONSENSUS_STATE_LENGTH_BYTES_LENGTH as usize
+            ..(CONSENSUS_STATE_LENGTH_BYTES_LENGTH + cs_length) as usize]
+            .to_vec(),
+    );
     let consensus_state = match decode_consensus_state(&decode_input) {
         Ok(cs) => cs,
         Err(e) => return Err(e),
@@ -180,9 +184,11 @@ impl ConsensusState {
         let trust_threshold_two_third = TrustThreshold::TWO_THIRDS;
         let trust_threshold_one_third = TrustThreshold::ONE_THIRD;
         if self.height + 1 == light_block.height().value() {
-            if self
-                .next_validator_set_hash
-                .ne(light_block.signed_header.header().validators_hash.as_bytes())
+            if self.next_validator_set_hash.ne(light_block
+                .signed_header
+                .header()
+                .validators_hash
+                .as_bytes())
             {
                 return Ok(false);
             }
@@ -382,7 +388,8 @@ fn encode_light_block_validation_result(
     validator_set_changed: bool,
     consensus_state_bytes: Bytes,
 ) -> Bytes {
-    let mut output = vec![0; (VALIDATE_RESULT_METADATA_LENGTH+consensus_state_bytes.len() as u64) as usize];
+    let mut output =
+        vec![0; (VALIDATE_RESULT_METADATA_LENGTH + consensus_state_bytes.len() as u64) as usize];
     output[0] = if validator_set_changed { 1 } else { 0 };
     output[24..32].copy_from_slice(consensus_state_bytes.len().to_be_bytes().as_ref());
     output[32..].copy_from_slice(consensus_state_bytes.as_ref());
