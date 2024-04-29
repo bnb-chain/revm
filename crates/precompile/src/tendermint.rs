@@ -1,6 +1,6 @@
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
-use tendermint::lite::light_client;
 use parity_bytes::BytesRef;
+use tendermint::lite::light_client;
 
 pub const TENDERMINT_HEADER_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(100),
@@ -18,11 +18,8 @@ fn tendermint_header_validation_run(input: &Bytes, gas_limit: u64) -> Precompile
     let mut bytes = BytesRef::Flexible(&mut output);
     let res = light_client::TmHeaderVerifier::execute(input.as_ref(), &mut bytes);
     match res {
-        Ok(()) => Ok((
-            TENDERMINT_HEADER_VALIDATION_BASE,
-            Bytes::from(output)
-        )),
-        Err(str) => Err(PrecompileError::Other(String::from(str)))
+        Ok(()) => Ok((TENDERMINT_HEADER_VALIDATION_BASE, Bytes::from(output))),
+        Err(str) => Err(PrecompileError::Other(String::from(str))),
     }
 }
 
