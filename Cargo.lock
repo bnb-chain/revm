@@ -2129,7 +2129,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.3.25",
+ "h2 0.3.26",
  "http 0.2.12",
  "http-body 0.4.6",
  "httparse",
@@ -2865,7 +2865,7 @@ dependencies = [
  "phf_shared",
  "proc-macro2",
  "quote",
- "syn 2.0.55",
+ "syn 2.0.65",
 ]
 
 [[package]]
@@ -3228,7 +3228,7 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
- "h2 0.3.25",
+ "h2 0.3.26",
  "http 0.2.12",
  "http-body 0.4.6",
  "hyper 0.14.28",
@@ -3319,7 +3319,7 @@ dependencies = [
  "ethers-core",
  "ethers-providers",
  "indicatif",
- "reqwest 0.12.2",
+ "reqwest 0.12.4",
  "revm-interpreter",
  "revm-precompile",
  "serde",
