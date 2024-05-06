@@ -7,6 +7,15 @@ pub const TENDERMINT_HEADER_VALIDATION: PrecompileWithAddress = PrecompileWithAd
     Precompile::Standard(crate::tendermint::tendermint_header_validation_run),
 );
 
+pub const TENDERMINT_HEADER_VALIDATION_NANO: PrecompileWithAddress = PrecompileWithAddress(
+    crate::u64_to_address(100),
+    Precompile::Standard(crate::tendermint::tendermint_header_validation_run_nano),
+);
+
+fn tendermint_header_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> PrecompileResult {
+    return Err(PrecompileError::other("suspended"));
+}
+
 fn tendermint_header_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const TENDERMINT_HEADER_VALIDATION_BASE: u64 = 3_000;
 

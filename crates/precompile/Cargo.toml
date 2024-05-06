@@ -38,7 +38,7 @@ cometbft-proto = { version = "0.1.0-alpha.2" }
 cometbft-light-client = { version = "0.1.0-alpha.2" }
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
-tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", branch = "parlia-develop", features = ["secp256k1"] }
+tendermint = { git = "https://github.com/forcodedancing/tendermint-rs-parlia", rev = "10cfd14bac4cd4f1180a6670ea44edabfeda2519", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
 alloy-rlp = { version = "0.3", default-features = false, features = [
     "arrayvec",

@@ -46,10 +46,14 @@ pub enum SpecId {
     // Shanghai	            17034870 (TS: 1681338455)
     CANCUN = 17,
     // Cancun	                TBD
-    LUBAN = 18,
-    // Luban
-    FEYNMAN = 19,
-    // Feynman
+    NANO = 18,
+    MORAN = 19,
+    PLANCK = 20,
+    LUBAN = 21,
+    PLATO = 22,
+    HERTZ = 23,
+    FEYNMAN = 24,
+
     #[default]
     LATEST = u8::MAX,
 }
@@ -85,10 +89,6 @@ pub enum SpecId {
     CANCUN = 20,
     ECOTONE = 21,
     FERMAT = 22,
-    LUBAN = 23,
-    // BSC LUBAN HARDFORK
-    FEYNMAN = 24,
-    // BSC FEYNMAN HARDFORK
     #[default]
     LATEST = u8::MAX,
 }
@@ -188,6 +188,16 @@ spec!(CANCUN, CancunSpec);
 
 spec!(LATEST, LatestSpec);
 
+// BSC Hardforks
+spec!(NANO, NanoSpec);
+spec!(MORAN, MoranSpec);
+spec!(PLANCK, PlanckSpec);
+spec!(LUBAN, LubanSpec);
+spec!(PLATO, PlatoSpec);
+spec!(HERTZ, HertzSpec);
+spec!(FEYNMAN, FeynmanSpec); 
+
+
 // Optimism Hardforks
 #[cfg(feature = "optimism")]
 spec!(BEDROCK, BedrockSpec);
@@ -200,11 +210,6 @@ spec!(ECOTONE, EcotoneSpec);
 #[cfg(feature = "optimism")]
 spec!(FERMAT, FermatSpec);
 
-// BSC Hardforks
-//#[cfg(feature = "bsc")]
-spec!(LUBAN, LubanSpec);
-//#[cfg(feature = "bsc")]
-spec!(FEYNMAN, FeynmanSpec); //TODO: add other hardforks from BSC
 
 #[macro_export]
 macro_rules! spec_to_generic {
@@ -261,8 +266,28 @@ macro_rules! spec_to_generic {
                 use $crate::CancunSpec as SPEC;
                 $e
             }
+            $crate::SpecId::NANO => {
+                use $crate::NanoSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::MORAN => {
+                use $crate::MoranSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLANCK => {
+                use $crate::PlanckSpec as SPEC;
+                $e
+            }
             $crate::SpecId::LUBAN => {
                 use $crate::LubanSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLATO => {
+                use $crate::PlatoSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::HERTZ => {
+                use $crate::HertzSpec as SPEC;
                 $e
             }
             $crate::SpecId::FEYNMAN => {
@@ -336,6 +361,15 @@ mod tests {
         #[cfg(feature = "optimism")]
         spec_to_generic!(CANCUN, assert_eq!(SPEC::SPEC_ID, CANCUN));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
+
+        spec_to_generic!(NANO, assert_eq!(SPEC::SPEC_ID, NANO));
+        spec_to_generic!(MORAN, assert_eq!(SPEC::SPEC_ID, MORAN));
+        spec_to_generic!(PLANCK, assert_eq!(SPEC::SPEC_ID, PLANCK));
+        spec_to_generic!(LUBAN, assert_eq!(SPEC::SPEC_ID, LUBAN));
+        spec_to_generic!(PLATO, assert_eq!(SPEC::SPEC_ID, PLATO));
+        spec_to_generic!(HERTZ, assert_eq!(SPEC::SPEC_ID, HERTZ));
+        spec_to_generic!(FEYNMAN, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
+
     }
 }
 

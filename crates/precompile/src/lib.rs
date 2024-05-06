@@ -14,17 +14,17 @@ pub mod blake2;
 mod bls;
 pub mod bn128;
 mod cometbft;
+mod double_sign;
 pub mod hash;
+mod iavl;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
 pub mod kzg_point_evaluation;
 pub mod modexp;
 pub mod secp256k1;
-pub mod utilities;
 mod tendermint;
-mod iavl;
 mod tm_secp256k1;
-mod double_sign;
+pub mod utilities;
 
 use core::hash::Hash;
 use once_cell::race::OnceBox;
@@ -72,7 +72,12 @@ impl Precompiles {
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
             PrecompileSpecId::FERMAT => Self::fermat(),
+            PrecompileSpecId::NANO => Self::nano(),
+            PrecompileSpecId::MORAN => Self::moran(),
+            PrecompileSpecId::PLANCK => Self::planck(),
             PrecompileSpecId::LUBAN => Self::luban(),
+            PrecompileSpecId::PLATO => Self::plato(),
+            PrecompileSpecId::HERTZ => Self::hertz(),
             PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::LATEST => Self::latest(),
@@ -169,16 +174,16 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for Luban sepc.
-    pub fn luban() -> &'static Self {
+    /// Returns precompiles for nano sepc.
+    pub fn nano() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let precompiles = Self::berlin().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
-                    bls::BLS_SIGNATURE_VALIDATION,
-                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+                    tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
+                    iavl::IAVL_PROOF_VALIDATION_NANO,
                 ]);
                 precompiles
             };
@@ -187,11 +192,95 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for Feynman sepc.
-    pub fn feynman() -> &'static Self {
+    /// Returns precompiles for moran sepc.
+    pub fn moran() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::berlin().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION,
+                    iavl::IAVL_PROOF_VALIDATION_MORAN,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for planck sepc.
+    pub fn planck() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::berlin().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION,
+                    iavl::IAVL_PROOF_VALIDATION_PLANCK,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for Luban sepc.
+    pub fn luban() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::planck().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION_BEFORE_HERTZ,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for plato sepc.
+    pub fn plato() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let precompiles = Self::luban().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for plato sepc.
+    pub fn hertz() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::plato().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for feynman sepc.
+    pub fn feynman() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::hertz().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
@@ -216,7 +305,7 @@ impl Precompiles {
 
             // Don't include KZG point evaluation precompile in no_std builds.
             #[cfg(feature = "c-kzg")]
-                let precompiles = {
+            let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
                     // EIP-4844: Shard Blob Transactions
@@ -236,13 +325,13 @@ impl Precompiles {
 
     /// Returns an iterator over the precompiles addresses.
     #[inline]
-    pub fn addresses(&self) -> impl Iterator<Item=&Address> {
+    pub fn addresses(&self) -> impl Iterator<Item = &Address> {
         self.inner.keys()
     }
 
     /// Consumes the type and returns all precompile addresses.
     #[inline]
-    pub fn into_addresses(self) -> impl Iterator<Item=Address> {
+    pub fn into_addresses(self) -> impl Iterator<Item = Address> {
         self.inner.into_keys()
     }
 
@@ -277,7 +366,7 @@ impl Precompiles {
     /// Extends the precompiles with the given precompiles.
     ///
     /// Other precompiles with overwrite existing precompiles.
-    pub fn extend(&mut self, other: impl IntoIterator<Item=PrecompileWithAddress>) {
+    pub fn extend(&mut self, other: impl IntoIterator<Item = PrecompileWithAddress>) {
         self.inner.extend(other.into_iter().map(Into::into));
     }
 }
@@ -305,10 +394,14 @@ pub enum PrecompileSpecId {
     BERLIN,
     FERMAT,
 
-    LUBAN,
-    // BSC LUBAN HARDFORK
-    FEYNMAN,
-    // BSC FEYNMAN HARDFORK
+    NANO,    // BSC NANO HARDFORK
+    MORAN,   // BSC MORAN HARDFORK
+    PLANCK,  // BSC PLANCK HARDFORK
+    LUBAN,   // BSC LUBAN HARDFORK
+    PLATO,   // BSC PLATO HARDFORK
+    HERTZ,   // BSC HERTZ HARDFORK
+    FEYNMAN, // BSC FEYNMAN HARDFORK
+
     CANCUN,
     LATEST,
 }
@@ -333,9 +426,13 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             FERMAT => Self::FERMAT,
             //#[cfg(feature = "bsc")]
+            NANO => Self::NANO,
+            MORAN => Self::MORAN,
+            PLANCK => Self::PLANCK,
             LUBAN => Self::LUBAN,
-            //#[cfg(feature = "bsc")]
-            FEYNMAN => Self::FEYNMAN
+            PLATO => Self::PLATO,
+            HERTZ => Self::HERTZ,
+            FEYNMAN => Self::FEYNMAN,
         }
     }
 }
