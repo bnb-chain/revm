@@ -168,6 +168,17 @@ impl<'a, EXT, DB: Database> EvmBuilder<'a, SetGenericStage, EXT, DB> {
         }
     }
 
+    /// Sets the Bsc handler with latest spec.
+    #[cfg(feature = "bsc")]
+    pub fn bsc(mut self) -> EvmBuilder<'a, HandlerStage, EXT, DB> {
+        self.handler = Handler::bsc_with_spec(self.handler.cfg.spec_id);
+        EvmBuilder {
+            context: self.context,
+            handler: self.handler,
+            phantom: PhantomData,
+        }
+    }
+
     /// Sets the mainnet handler with latest spec.
     ///
     /// Enabled only with `optimism-default-handler` feature.

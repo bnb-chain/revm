@@ -12,6 +12,9 @@ pub struct HandlerCfg {
     /// Optimism related field, it will append the Optimism handle register to the EVM.
     #[cfg(feature = "optimism")]
     pub is_optimism: bool,
+    /// Bsc related field, it will append the Bsc handle register to the EVM.
+    #[cfg(feature = "bsc")]
+    pub is_bsc: bool,
 }
 
 impl Default for HandlerCfg {
@@ -31,26 +34,49 @@ impl HandlerCfg {
                 let is_optimism = false;
             }
         }
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "bsc")] {
+                let is_bsc = true;
+            } else {
+                let is_bsc = false;
+            }
+        }
         Self {
             spec_id,
             #[cfg(feature = "optimism")]
             is_optimism,
+            #[cfg(feature = "bsc")]
+            is_bsc,
         }
     }
 
     /// Creates new `HandlerCfg` instance with the optimism feature.
     #[cfg(feature = "optimism")]
     pub fn new_with_optimism(spec_id: SpecId, is_optimism: bool) -> Self {
-        Self {
-            spec_id,
-            is_optimism,
-        }
+        Self { spec_id, is_optimism }
+    }
+
+    /// Creates new `HandlerCfg` instance with the bsc feature.
+    #[cfg(feature = "bsc")]
+    pub fn new_with_bsc(spec_id: SpecId, is_bsc: bool) -> Self {
+        Self { spec_id, is_bsc }
     }
 
     /// Returns `true` if the optimism feature is enabled and flag is set to `true`.
     pub fn is_optimism(&self) -> bool {
         cfg_if::cfg_if! {
             if #[cfg(feature = "optimism")] {
+                self.is_optimism
+            } else {
+                false
+            }
+        }
+    }
+
+    /// Returns `true` if the bsc feature is enabled and flag is set to `true`.
+    pub fn is_bsc(&self) -> bool {
+        cfg_if::cfg_if! {
+            if #[cfg(feature = "bsc")] {
                 self.is_optimism
             } else {
                 false
@@ -71,10 +97,7 @@ pub struct CfgEnvWithHandlerCfg {
 impl CfgEnvWithHandlerCfg {
     /// Returns new instance of `CfgEnvWithHandlerCfg` with the handler configuration.
     pub fn new(cfg_env: CfgEnv, handler_cfg: HandlerCfg) -> Self {
-        Self {
-            cfg_env,
-            handler_cfg,
-        }
+        Self { cfg_env, handler_cfg }
     }
 
     /// Returns new `CfgEnvWithHandlerCfg` instance with the chain spec id.
@@ -88,6 +111,12 @@ impl CfgEnvWithHandlerCfg {
     #[cfg(feature = "optimism")]
     pub fn enable_optimism(&mut self) {
         self.handler_cfg.is_optimism = true;
+    }
+
+    /// Enables the bsc feature.
+    #[cfg(feature = "bsc")]
+    pub fn enable_bsc(&mut self) {
+        self.handler_cfg.is_bsc = true;
     }
 }
 
@@ -141,6 +170,12 @@ impl EnvWithHandlerCfg {
     #[cfg(feature = "optimism")]
     pub fn enable_optimism(&mut self) {
         self.handler_cfg.is_optimism = true;
+    }
+
+    /// Enables the bsc handle register.
+    #[cfg(feature = "bsc")]
+    pub fn enable_bsc(&mut self) {
+        self.handler_cfg.is_bsc = true;
     }
 }
 
