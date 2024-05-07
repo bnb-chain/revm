@@ -43,7 +43,9 @@ pub struct PostExecutionHandler<'a, EXT, DB: Database> {
     pub reward_beneficiary: RewardBeneficiaryHandle<'a, EXT, DB>,
     /// Main return handle, returns the output of the transact.
     pub output: OutputHandle<'a, EXT, DB>,
-    /// End handle.
+    /// Called when execution ends.
+    /// End handle in comparison to output handle will be called every time after execution.
+    /// Output in case of error will not be called.
     pub end: EndHandle<'a, EXT, DB>,
 }
 

@@ -84,11 +84,11 @@ pub enum SpecId {
     MERGE = 15,
     BEDROCK = 16,
     REGOLITH = 17,
-    SHANGHAI = 18,
-    CANYON = 19,
-    CANCUN = 20,
-    ECOTONE = 21,
-    FERMAT = 22,
+    FERMAT = 18,
+    SHANGHAI = 19,
+    CANYON = 20,
+    CANCUN = 21,
+    ECOTONE = 22,
     #[default]
     LATEST = u8::MAX,
 }
@@ -126,21 +126,69 @@ impl From<&str> for SpecId {
             "Merge" => Self::MERGE,
             "Shanghai" => Self::SHANGHAI,
             "Cancun" => Self::CANCUN,
+            "Nano" => Self::NANO,
+            "Moran" => Self::MORAN,
+            "Planck" => Self::PLANCK,
+            "Luban" => Self::LUBAN,
+            "Plato" => Self::PLATO,
+            "Hertz" => Self::HERTZ,
+            "Feynman" => Self::FEYNMAN,
             #[cfg(feature = "optimism")]
             "Bedrock" => SpecId::BEDROCK,
             #[cfg(feature = "optimism")]
             "Regolith" => SpecId::REGOLITH,
+            #[cfg(feature = "opbnb")]
+            "Fermat" => SpecId::FERMAT,
             #[cfg(feature = "optimism")]
             "Canyon" => SpecId::CANYON,
             #[cfg(feature = "optimism")]
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fermat" => SpecId::FERMAT,
-            #[cfg(feature = "bsc")]
-            "LUBAN" => SpecId::LUBAN, //TODO: add other hardforks from BSC
-            #[cfg(feature = "bsc")]
-            "FEYNMAN" => SpecId::FEYNMAN, //TODO: add other hardforks from BSC
             _ => Self::LATEST,
+        }
+    }
+}
+
+impl From<SpecId> for &'static str {
+    fn from(spec_id: SpecId) -> Self {
+        match spec_id {
+            SpecId::FRONTIER => "Frontier",
+            SpecId::FRONTIER_THAWING => "Frontier Thawing",
+            SpecId::HOMESTEAD => "Homestead",
+            SpecId::DAO_FORK => "DAO Fork",
+            SpecId::TANGERINE => "Tangerine",
+            SpecId::SPURIOUS_DRAGON => "Spurious",
+            SpecId::BYZANTIUM => "Byzantium",
+            SpecId::CONSTANTINOPLE => "Constantinople",
+            SpecId::PETERSBURG => "Petersburg",
+            SpecId::ISTANBUL => "Istanbul",
+            SpecId::MUIR_GLACIER => "MuirGlacier",
+            SpecId::BERLIN => "Berlin",
+            SpecId::LONDON => "London",
+            SpecId::ARROW_GLACIER => "Arrow Glacier",
+            SpecId::GRAY_GLACIER => "Gray Glacier",
+            SpecId::MERGE => "Merge",
+            SpecId::SHANGHAI => "Shanghai",
+            SpecId::CANCUN => "Cancun",
+            SpecId::NANO => "Nano",
+            SpecId::MORAN => "Moran",
+            SpecId::PLANCK => "Planck",
+            SpecId::LUBAN => "Luban",
+            SpecId::PLATO => "Plato",
+            SpecId::HERTZ => "Hertz",
+            SpecId::FEYNMAN => "Feynman",
+            #[cfg(feature = "optimism")]
+            SpecId::BEDROCK => "Bedrock",
+            #[cfg(feature = "optimism")]
+            SpecId::REGOLITH => "Regolith",
+            #[cfg(feature = "opbnb")]
+            SpecId::FERMAT => "Fermat",
+            #[cfg(feature = "optimism")]
+            SpecId::CANYON => "Canyon",
+            #[cfg(feature = "optimism")]
+            SpecId::ECOTONE => "Ecotone",
+            SpecId::LATEST => "Latest",
         }
     }
 }
@@ -207,9 +255,8 @@ spec!(REGOLITH, RegolithSpec);
 spec!(CANYON, CanyonSpec);
 #[cfg(feature = "optimism")]
 spec!(ECOTONE, EcotoneSpec);
-#[cfg(feature = "optimism")]
+#[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
-
 
 #[macro_export]
 macro_rules! spec_to_generic {
@@ -318,7 +365,7 @@ macro_rules! spec_to_generic {
                 use $crate::EcotoneSpec as SPEC;
                 $e
             }
-            #[cfg(feature = "optimism")]
+            #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
                 use $crate::FermatSpec as SPEC;
                 $e

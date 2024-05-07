@@ -6,7 +6,7 @@ keywords = ["no_std", "ethereum", "evm", "revm", "types"]
 license = "MIT"
 name = "revm-primitives"
 repository = "https://github.com/bluealloy/revm"
-version = "3.1.0"
+version = "3.1.1"
 readme = "../../README.md"
 
 # Don't need to run build script outside of this repo
@@ -17,7 +17,7 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-alloy-primitives = { version = "0.6", default-features = false, features = [
+alloy-primitives = { version = "0.7", default-features = false, features = [
     "rlp",
 ] }
 hashbrown = "0.14"
@@ -91,5 +91,8 @@ optional_beneficiary_reward = []
 # See comments in `revm-precompile`
 c-kzg = ["dep:c-kzg", "dep:once_cell", "dep:derive_more"]
 
+opbnb = []
+opbnb-default-handler = ["opbnb"]
+negate-opbnb-default-handler = []
 
 bsc = []
