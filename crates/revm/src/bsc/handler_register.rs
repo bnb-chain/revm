@@ -39,27 +39,3 @@ pub fn collect_system_reward<SPEC: Spec, EXT, DB: Database>(
 
     Ok(())
 }
-
-#[inline]
-pub fn reimburse_caller<SPEC: Spec, EXT, DB: Database>(
-    context: &mut Context<EXT, DB>,
-    gas: &Gas,
-) -> Result<(), EVMError<DB::Error>> {
-    if context.evm.env.tx.bsc.is_system_transaction.unwrap_or(false) {
-        return Ok(());
-    }
-
-    let caller = context.evm.env.tx.caller;
-    let effective_gas_price = context.evm.env.effective_gas_price();
-
-    // return balance of not spend gas.
-    let (caller_account, _) =
-        context.evm.inner.journaled_state.load_account(caller, &mut context.evm.inner.db)?;
-
-    caller_account.info.balance = caller_account
-        .info
-        .balance
-        .saturating_add(effective_gas_price * U256::from(gas.remaining() + gas.refunded() as u64));
-
-    Ok(())
-}

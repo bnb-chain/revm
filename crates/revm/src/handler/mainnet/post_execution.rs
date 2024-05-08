@@ -32,8 +32,11 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
         effective_gas_price
     };
 
-    let (coinbase_account, _) =
-        context.evm.inner.journaled_state.load_account(beneficiary, &mut context.evm.inner.db)?;
+    let (coinbase_account, _) = context
+        .evm
+        .inner
+        .journaled_state
+        .load_account(beneficiary, &mut context.evm.inner.db)?;
 
     coinbase_account.mark_touch();
     coinbase_account.info.balance = coinbase_account
@@ -53,8 +56,11 @@ pub fn reimburse_caller<SPEC: Spec, EXT, DB: Database>(
     let effective_gas_price = context.evm.env.effective_gas_price();
 
     // return balance of not spend gas.
-    let (caller_account, _) =
-        context.evm.inner.journaled_state.load_account(caller, &mut context.evm.inner.db)?;
+    let (caller_account, _) = context
+        .evm
+        .inner
+        .journaled_state
+        .load_account(caller, &mut context.evm.inner.db)?;
 
     caller_account.info.balance = caller_account
         .info
@@ -88,14 +94,18 @@ pub fn output<EXT, DB: Database>(
             logs,
             output,
         },
-        SuccessOrHalt::Revert => {
-            ExecutionResult::Revert { gas_used: final_gas_used, output: output.into_data() }
-        }
-        SuccessOrHalt::Halt(reason) => ExecutionResult::Halt { reason, gas_used: final_gas_used },
+        SuccessOrHalt::Revert => ExecutionResult::Revert {
+            gas_used: final_gas_used,
+            output: output.into_data(),
+        },
+        SuccessOrHalt::Halt(reason) => ExecutionResult::Halt {
+            reason,
+            gas_used: final_gas_used,
+        },
         // Only two internal return flags.
-        flag @ (SuccessOrHalt::FatalExternalError |
-        SuccessOrHalt::InternalContinue |
-        SuccessOrHalt::InternalCallOrCreate) => {
+        flag @ (SuccessOrHalt::FatalExternalError
+        | SuccessOrHalt::InternalContinue
+        | SuccessOrHalt::InternalCallOrCreate) => {
             panic!(
                 "Encountered unexpected internal return flag: {:?} with instruction result: {:?}",
                 flag, instruction_result

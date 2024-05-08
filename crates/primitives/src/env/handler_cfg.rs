@@ -34,26 +34,22 @@ impl HandlerCfg {
                 let is_optimism = false;
             }
         }
-        cfg_if::cfg_if! {
-            if #[cfg(feature = "bsc")] {
-                let is_bsc = true;
-            } else {
-                let is_bsc = false;
-            }
-        }
         Self {
             spec_id,
             #[cfg(feature = "optimism")]
             is_optimism,
             #[cfg(feature = "bsc")]
-            is_bsc,
+            is_bsc: true,
         }
     }
 
     /// Creates new `HandlerCfg` instance with the optimism feature.
     #[cfg(feature = "optimism")]
     pub fn new_with_optimism(spec_id: SpecId, is_optimism: bool) -> Self {
-        Self { spec_id, is_optimism }
+        Self {
+            spec_id,
+            is_optimism,
+        }
     }
 
     /// Creates new `HandlerCfg` instance with the bsc feature.
@@ -77,7 +73,7 @@ impl HandlerCfg {
     pub fn is_bsc(&self) -> bool {
         cfg_if::cfg_if! {
             if #[cfg(feature = "bsc")] {
-                self.is_optimism
+                self.is_bsc
             } else {
                 false
             }
@@ -97,7 +93,10 @@ pub struct CfgEnvWithHandlerCfg {
 impl CfgEnvWithHandlerCfg {
     /// Returns new instance of `CfgEnvWithHandlerCfg` with the handler configuration.
     pub fn new(cfg_env: CfgEnv, handler_cfg: HandlerCfg) -> Self {
-        Self { cfg_env, handler_cfg }
+        Self {
+            cfg_env,
+            handler_cfg,
+        }
     }
 
     /// Returns new `CfgEnvWithHandlerCfg` instance with the chain spec id.

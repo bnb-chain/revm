@@ -19,8 +19,11 @@ pub fn validate_tx_against_state<SPEC: Spec, EXT, DB: Database>(
 ) -> Result<(), EVMError<DB::Error>> {
     // load acc
     let tx_caller = context.evm.env.tx.caller;
-    let (caller_account, _) =
-        context.evm.inner.journaled_state.load_account(tx_caller, &mut context.evm.inner.db)?;
+    let (caller_account, _) = context
+        .evm
+        .inner
+        .journaled_state
+        .load_account(tx_caller, &mut context.evm.inner.db)?;
 
     context
         .evm

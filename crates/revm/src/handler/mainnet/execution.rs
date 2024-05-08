@@ -73,8 +73,13 @@ pub fn call_return<EXT, DB: Database>(
     frame: Box<CallFrame>,
     interpreter_result: InterpreterResult,
 ) -> Result<CallOutcome, EVMError<DB::Error>> {
-    context.evm.call_return(&interpreter_result, frame.frame_data.checkpoint);
-    Ok(CallOutcome::new(interpreter_result, frame.return_memory_range))
+    context
+        .evm
+        .call_return(&interpreter_result, frame.frame_data.checkpoint);
+    Ok(CallOutcome::new(
+        interpreter_result,
+        frame.return_memory_range,
+    ))
 }
 
 #[inline]
@@ -85,7 +90,10 @@ pub fn insert_call_outcome<EXT, DB: Database>(
     outcome: CallOutcome,
 ) -> Result<(), EVMError<DB::Error>> {
     core::mem::replace(&mut context.evm.error, Ok(()))?;
-    frame.frame_data_mut().interpreter.insert_call_outcome(shared_memory, outcome);
+    frame
+        .frame_data_mut()
+        .interpreter
+        .insert_call_outcome(shared_memory, outcome);
     Ok(())
 }
 
@@ -109,7 +117,10 @@ pub fn create_return<SPEC: Spec, EXT, DB: Database>(
         frame.created_address,
         frame.frame_data.checkpoint,
     );
-    Ok(CreateOutcome::new(interpreter_result, Some(frame.created_address)))
+    Ok(CreateOutcome::new(
+        interpreter_result,
+        Some(frame.created_address),
+    ))
 }
 
 #[inline]
@@ -119,7 +130,10 @@ pub fn insert_create_outcome<EXT, DB: Database>(
     outcome: CreateOutcome,
 ) -> Result<(), EVMError<DB::Error>> {
     core::mem::replace(&mut context.evm.error, Ok(()))?;
-    frame.frame_data_mut().interpreter.insert_create_outcome(outcome);
+    frame
+        .frame_data_mut()
+        .interpreter
+        .insert_create_outcome(outcome);
     Ok(())
 }
 
@@ -136,7 +150,11 @@ mod tests {
         env.tx.gas_limit = 100;
 
         let mut first_frame = FrameResult::Call(CallOutcome::new(
-            InterpreterResult { result: instruction_result, output: Bytes::new(), gas },
+            InterpreterResult {
+                result: instruction_result,
+                output: Bytes::new(),
+                gas,
+            },
             0..0,
         ));
         frame_return_with_refund_flag::<CancunSpec>(&env, &mut first_frame, true);

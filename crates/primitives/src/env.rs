@@ -8,7 +8,8 @@ use crate::{
     VERSIONED_HASH_VERSION_KZG,
 };
 use core::cmp::{min, Ordering};
-use std::{boxed::Box, vec::Vec};
+use std::boxed::Box;
+use std::vec::Vec;
 
 /// EVM environment configuration.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
@@ -99,16 +100,16 @@ impl Env {
             }
 
             // check minimal cost against basefee
-            if !self.cfg.is_base_fee_check_disabled() &&
-                self.effective_gas_price() < self.block.basefee
+            if !self.cfg.is_base_fee_check_disabled()
+                && self.effective_gas_price() < self.block.basefee
             {
                 return Err(InvalidTransaction::GasPriceLessThanBasefee);
             }
         }
 
         // Check if gas_limit is more than block_gas_limit
-        if !self.cfg.is_block_gas_limit_disabled() &&
-            U256::from(self.tx.gas_limit) > self.block.gas_limit
+        if !self.cfg.is_block_gas_limit_disabled()
+            && U256::from(self.tx.gas_limit) > self.block.gas_limit
         {
             return Err(InvalidTransaction::CallerGasLimitMoreThanBlock);
         }
@@ -442,7 +443,9 @@ impl BlockEnv {
     /// [EIP-4844]: https://eips.ethereum.org/EIPS/eip-4844
     #[inline]
     pub fn get_blob_gasprice(&self) -> Option<u128> {
-        self.blob_excess_gas_and_price.as_ref().map(|a| a.blob_gasprice)
+        self.blob_excess_gas_and_price
+            .as_ref()
+            .map(|a| a.blob_gasprice)
     }
 
     /// Return `blob_excess_gas` header field. See [EIP-4844].
@@ -452,7 +455,9 @@ impl BlockEnv {
     /// [EIP-4844]: https://eips.ethereum.org/EIPS/eip-4844
     #[inline]
     pub fn get_blob_excess_gas(&self) -> Option<u64> {
-        self.blob_excess_gas_and_price.as_ref().map(|a| a.excess_blob_gas)
+        self.blob_excess_gas_and_price
+            .as_ref()
+            .map(|a| a.excess_blob_gas)
     }
 
     /// Clears environment and resets fields to default values.
@@ -600,7 +605,10 @@ impl BlobExcessGasAndPrice {
     /// Creates a new instance by calculating the blob gas price with [`calc_blob_gasprice`].
     pub fn new(excess_blob_gas: u64) -> Self {
         let blob_gasprice = calc_blob_gasprice(excess_blob_gas);
-        Self { excess_blob_gas, blob_gasprice }
+        Self {
+            excess_blob_gas,
+            blob_gasprice,
+        }
     }
 }
 
@@ -724,7 +732,10 @@ mod tests {
         let mut env = Env::default();
         env.tx.chain_id = Some(1);
         env.cfg.chain_id = 2;
-        assert_eq!(env.validate_tx::<crate::LatestSpec>(), Err(InvalidTransaction::InvalidChainId));
+        assert_eq!(
+            env.validate_tx::<crate::LatestSpec>(),
+            Err(InvalidTransaction::InvalidChainId)
+        );
     }
 
     #[test]
