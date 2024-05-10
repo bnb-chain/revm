@@ -47,12 +47,15 @@ cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometb
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
 
+# BLS12-381 precompiles
+blst = { version = "0.3.11", optional = true }
+
 [dev-dependencies]
 criterion = { version = "0.5" }
 rand = { version = "0.8", features = ["std"] }
 
 [features]
-default = ["std", "c-kzg", "secp256k1", "portable"]
+default = ["std", "c-kzg", "secp256k1", "portable", "blst"]
 std = [
     "revm-primitives/std",
     "k256/std",
@@ -94,6 +97,8 @@ opbnb-default-handler = [
 negate-opbnb-default-handler = [
     "revm-primitives/negate-opbnb-default-handler",
 ]
+# Enables the BLS12-381 precompiles.
+blst = ["dep:blst"]
 
 [[bench]]
 name = "bench"
