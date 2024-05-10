@@ -230,7 +230,7 @@ impl ConsensusState {
             .validators
             .hash()
             .as_bytes()
-            .ne(light_block.validators.hash().as_bytes());
+            .ne(light_block.signed_header.header().validators_hash.as_bytes());
         self.height = light_block.height().value();
         self.next_validator_set_hash = Bytes::from(
             light_block
@@ -365,7 +365,7 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
             None => return Err(Error::CometBftInvalidInput),
         };
         let vp = Power::from(voting_power as u32);
-        let validator_info = Validator::new(pk, vp);
+        let validator_info = Validator::new_with_bls_and_relayer(pk, vp,relayer_bls_key.to_vec(), relayer_address.to_vec());
         validator_set.push(validator_info);
         relayer_address_set.push(relayer_address);
         relayer_bls_key_set.push(relayer_bls_key);
@@ -518,12 +518,14 @@ mod tests {
                 "0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"
             ));
             let mut validators_info = Vec::new();
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d")).to_vec(),
+                Bytes::from(hex!("B32d0723583040F3A16D1380D1e6AA874cD1bdF7")).to_vec(),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
@@ -549,34 +551,40 @@ mod tests {
             let mut validators_info = Vec::new();
             let mut bls_pub_keys = Vec::new();
             let mut relayer_addresses = Vec::new();
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")).to_vec(),
+                Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
             relayer_addresses.push(Bytes::from(hex!(
                 "d5e63aeee6e6fa122a6a23a6e0fca87701ba1541"
             )));
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")).to_vec(),
+                Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
             relayer_addresses.push(Bytes::from(hex!(
                 "6fd1ceb5a48579f322605220d4325bd9ff90d5fa"
             )));
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")).to_vec(),
+                Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
             relayer_addresses.push(Bytes::from(hex!(

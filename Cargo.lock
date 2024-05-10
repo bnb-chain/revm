@@ -682,8 +682,7 @@ checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
 [[package]]
 name = "cometbft"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77ec0bb28806a55912b4f54e4600df647a215525deebeaefadbc07b23b178d08"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "bytes",
  "cometbft-proto",
@@ -711,8 +710,7 @@ dependencies = [
 [[package]]
 name = "cometbft-config"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5238f4070419b70d9613856fc137a5413590258180e24189ed3bdb9ddac2c87e"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "cometbft",
  "flex-error",
@@ -725,8 +723,7 @@ dependencies = [
 [[package]]
 name = "cometbft-light-client"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5415ca068ba2a147bc3f118bf2b0054e71507a3ab90385f432f4c111caf310bf"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "cometbft",
  "cometbft-light-client-verifier",
@@ -750,8 +747,7 @@ dependencies = [
 [[package]]
 name = "cometbft-light-client-verifier"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8833008de443fbc949d507e041f44c29edc1189d3da3ba16c47c7720bf968f6"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "cometbft",
  "derive_more",
@@ -763,8 +759,7 @@ dependencies = [
 [[package]]
 name = "cometbft-proto"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b37df177a39e7400b554ed95addf83e826a2bbf177fb7357bc8d4e3d1a954f63"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "bytes",
  "flex-error",
@@ -781,8 +776,7 @@ dependencies = [
 [[package]]
 name = "cometbft-rpc"
 version = "0.1.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4949f50354a0728082b90ddc2cb070b186c7242ee7ff9f6a47d2eee55d116916"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=4e77e57#4e77e57c352c35b99685f28aaa9555028399e41a"
 dependencies = [
  "async-trait",
  "bytes",
