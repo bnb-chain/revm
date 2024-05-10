@@ -226,11 +226,11 @@ impl ConsensusState {
             }
         }
 
-        let validator_set_changed = self
-            .validators
-            .hash()
-            .as_bytes()
-            .ne(light_block.signed_header.header().validators_hash.as_bytes());
+        let validator_set_changed = self.validators.hash().as_bytes().ne(light_block
+            .signed_header
+            .header()
+            .validators_hash
+            .as_bytes());
         self.height = light_block.height().value();
         self.next_validator_set_hash = Bytes::from(
             light_block
@@ -365,7 +365,12 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
             None => return Err(Error::CometBftInvalidInput),
         };
         let vp = Power::from(voting_power as u32);
-        let validator_info = Validator::new_with_bls_and_relayer(pk, vp,relayer_bls_key.to_vec(), relayer_address.to_vec());
+        let validator_info = Validator::new_with_bls_and_relayer(
+            pk,
+            vp,
+            relayer_bls_key.to_vec(),
+            relayer_address.to_vec(),
+        );
         validator_set.push(validator_info);
         relayer_address_set.push(relayer_address);
         relayer_bls_key_set.push(relayer_bls_key);
