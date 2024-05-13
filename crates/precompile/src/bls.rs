@@ -69,7 +69,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
 }
 
 fn calc_gas_cost(input: &Bytes) -> u64 {
-    const BLS_SIGNATURE_VALIDATION_BASE: u64 = 3_000;
+    const BLS_SIGNATURE_VALIDATION_BASE: u64 = 1_000;
     const BLS_SIGNATURE_VALIDATION_PER_KER: u64 = 3_500;
 
     let msg_length = BLS_MSG_HASH_LENGTH + BLS_SIGNATURE_LENGTH;
