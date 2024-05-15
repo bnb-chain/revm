@@ -2,51 +2,64 @@ use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, Precomp
 use parity_bytes::BytesRef;
 use tendermint::lite::iavl_proof;
 
+/// Iavl proof validation precompile for BSC.
 pub const IAVL_PROOF_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
     Precompile::Standard(crate::iavl::iavl_proof_validation_run),
 );
 
+/// Iavl proof validation precompile for BSC after Nano hardfork.
 pub const IAVL_PROOF_VALIDATION_NANO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
     Precompile::Standard(crate::iavl::iavl_proof_validation_run_nano),
 );
 
+/// Iavl proof validation precompile for BSC after Moran hardfork.
 pub const IAVL_PROOF_VALIDATION_MORAN: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
     Precompile::Standard(crate::iavl::iavl_proof_validation_run_moran),
 );
 
+/// Iavl proof validation precompile for BSC after Planck hardfork.
 pub const IAVL_PROOF_VALIDATION_PLANCK: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
     Precompile::Standard(crate::iavl::iavl_proof_validation_run_planck),
 );
 
+/// Iavl proof validation precompile for BSC after Plato hardfork.
 pub const IAVL_PROOF_VALIDATION_PLATO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
     Precompile::Standard(crate::iavl::iavl_proof_validation_run_plato),
 );
 
+/// Run Iavl proof validation.
 fn iavl_proof_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     return iavl_proof_validation_run_inner(input, gas_limit, false, false, false);
 }
 
+
+/// Run Iavl proof validation with Nano hardfork.
 fn iavl_proof_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> PrecompileResult {
     return Err(PrecompileError::other("suspended"));
 }
 
+
+/// Run Iavl proof validation with Moran hardfork.
 fn iavl_proof_validation_run_moran(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     return iavl_proof_validation_run_inner(input, gas_limit, true, false, false);
 }
 
+/// Run Iavl proof validation with Planck hardfork.
 fn iavl_proof_validation_run_planck(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     return iavl_proof_validation_run_inner(input, gas_limit, false, true, false);
 }
 
+/// Run Iavl proof validation with Plato hardfork.
 fn iavl_proof_validation_run_plato(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     return iavl_proof_validation_run_inner(input, gas_limit, false, false, true);
 }
 
+/// Run Iavl proof validation with given hardfork toggles.
 fn iavl_proof_validation_run_inner(
     input: &Bytes,
     gas_limit: u64,

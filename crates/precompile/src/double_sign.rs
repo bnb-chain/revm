@@ -6,6 +6,7 @@ use core::cmp::Ordering;
 use revm_primitives::alloy_primitives::B512;
 use revm_primitives::{keccak256, PrecompileError, B256};
 
+/// Double sign evidence validation precompile for BSC.
 pub const DOUBLE_SIGN_EVIDENCE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(104),
     Precompile::Standard(crate::double_sign::double_sign_evidence_validation_run),
@@ -13,6 +14,7 @@ pub const DOUBLE_SIGN_EVIDENCE_VALIDATION: PrecompileWithAddress = PrecompileWit
 
 const EXTRA_SEAL_LENGTH: usize = 65;
 
+/// Double sign evidence with two different headers.
 #[derive(Debug, RlpDecodable, PartialEq)]
 pub struct DoubleSignEvidence {
     pub chain_id: ChainId,
@@ -20,6 +22,7 @@ pub struct DoubleSignEvidence {
     pub header_bytes2: Bytes,
 }
 
+/// Header of a block.
 #[derive(Debug, RlpDecodable, PartialEq)]
 pub struct Header {
     pub parent_hash: [u8; 32],
@@ -39,6 +42,7 @@ pub struct Header {
     pub nonce: [u8; 8],
 }
 
+/// The fields to generate the seal hash.
 #[derive(Debug, RlpEncodable, RlpDecodable, PartialEq)]
 pub struct SealContent {
     pub chain_id: ChainId,
@@ -59,10 +63,15 @@ pub struct SealContent {
     pub nonce: [u8; 8],
 }
 
-// Run input: rlp encoded DoubleSignEvidence
-// return:
-// signer address| evidence height|
-// 20 bytes      | 32 bytes       |
+/// Run the double sign evidence validation precompile.
+///
+/// input: rlp encoded DoubleSignEvidence
+///
+/// return:
+///
+/// signer address| evidence height|
+///
+/// 20 bytes      | 32 bytes       |
 fn double_sign_evidence_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE: u64 = 10_000;
 

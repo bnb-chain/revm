@@ -174,7 +174,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for nano sepc.
+    /// Returns precompiles for Nano sepc.
     pub fn nano() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -192,7 +192,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for moran sepc.
+    /// Returns precompiles for Moran sepc.
     pub fn moran() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -210,7 +210,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for planck sepc.
+    /// Returns precompiles for Planck sepc.
     pub fn planck() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -246,7 +246,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for plato sepc.
+    /// Returns precompiles for Plato sepc.
     pub fn plato() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -261,7 +261,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for plato sepc.
+    /// Returns precompiles for Hertz sepc.
     pub fn hertz() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -276,7 +276,7 @@ impl Precompiles {
         })
     }
 
-    /// Returns precompiles for feynman sepc.
+    /// Returns precompiles for Feynman sepc.
     pub fn feynman() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {

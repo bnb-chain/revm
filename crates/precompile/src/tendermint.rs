@@ -2,20 +2,24 @@ use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, Precomp
 use parity_bytes::BytesRef;
 use tendermint::lite::light_client;
 
+/// Tendermint precompile for BSC.
 pub const TENDERMINT_HEADER_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(100),
     Precompile::Standard(crate::tendermint::tendermint_header_validation_run),
 );
 
+/// Tendermint precompile for BSC after Nano hardfork.
 pub const TENDERMINT_HEADER_VALIDATION_NANO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(100),
     Precompile::Standard(crate::tendermint::tendermint_header_validation_run_nano),
 );
 
+/// Run the Tendermint header validation precompile after Nano hardfork.
 fn tendermint_header_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> PrecompileResult {
     return Err(PrecompileError::other("suspended"));
 }
 
+/// Run the Tendermint header validation precompile.
 fn tendermint_header_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const TENDERMINT_HEADER_VALIDATION_BASE: u64 = 3_000;
 
