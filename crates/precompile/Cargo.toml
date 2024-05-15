@@ -94,8 +94,6 @@ negate-opbnb-default-handler = [
     "revm-primitives/negate-opbnb-default-handler",
 ]
 
-bsc = ["revm-primitives/bsc"]
-
 [[bench]]
 name = "bench"
 path = "benches/bench.rs"

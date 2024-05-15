@@ -5,55 +5,29 @@ pub use SpecId::*;
 /// Specification IDs and their activation block.
 ///
 /// Information was obtained from the [Ethereum Execution Specifications](https://github.com/ethereum/execution-specs)
-#[cfg(not(feature = "optimism"))]
+#[cfg(all(not(feature = "optimism"), not(feature = "bsc")))]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, enumn::N)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SpecId {
-    FRONTIER = 0,
-    // Frontier	            0
-    FRONTIER_THAWING = 1,
-    // Frontier Thawing       200000
-    HOMESTEAD = 2,
-    // Homestead	            1150000
-    DAO_FORK = 3,
-    // DAO Fork	            1920000
-    TANGERINE = 4,
-    // Tangerine Whistle	    2463000
-    SPURIOUS_DRAGON = 5,
-    // Spurious Dragon        2675000
-    BYZANTIUM = 6,
-    // Byzantium	            4370000
-    CONSTANTINOPLE = 7,
-    // Constantinople         7280000 is overwritten with PETERSBURG
-    PETERSBURG = 8,
-    // Petersburg             7280000
-    ISTANBUL = 9,
-    // Istanbul	            9069000
-    MUIR_GLACIER = 10,
-    // Muir Glacier	        9200000
-    BERLIN = 11,
-    // Berlin	                12244000
-    LONDON = 12,
-    // London	                12965000
-    ARROW_GLACIER = 13,
-    // Arrow Glacier	        13773000
-    GRAY_GLACIER = 14,
-    // Gray Glacier	        15050000
-    MERGE = 15,
-    // Paris/Merge	        15537394 (TTD: 58750000000000000000000)
-    SHANGHAI = 16,
-    // Shanghai	            17034870 (TS: 1681338455)
-    CANCUN = 17,
-    // Cancun	                TBD
-    NANO = 18,
-    MORAN = 19,
-    PLANCK = 20,
-    LUBAN = 21,
-    PLATO = 22,
-    HERTZ = 23,
-    FEYNMAN = 24,
-
+    FRONTIER = 0,         // Frontier	            0
+    FRONTIER_THAWING = 1, // Frontier Thawing       200000
+    HOMESTEAD = 2,        // Homestead	            1150000
+    DAO_FORK = 3,         // DAO Fork	            1920000
+    TANGERINE = 4,        // Tangerine Whistle	    2463000
+    SPURIOUS_DRAGON = 5,  // Spurious Dragon        2675000
+    BYZANTIUM = 6,        // Byzantium	            4370000
+    CONSTANTINOPLE = 7,   // Constantinople         7280000 is overwritten with PETERSBURG
+    PETERSBURG = 8,       // Petersburg             7280000
+    ISTANBUL = 9,         // Istanbul	            9069000
+    MUIR_GLACIER = 10,    // Muir Glacier	        9200000
+    BERLIN = 11,          // Berlin	                12244000
+    LONDON = 12,          // London	                12965000
+    ARROW_GLACIER = 13,   // Arrow Glacier	        13773000
+    GRAY_GLACIER = 14,    // Gray Glacier	        15050000
+    MERGE = 15,           // Paris/Merge	        15537394 (TTD: 58750000000000000000000)
+    SHANGHAI = 16,        // Shanghai	            17034870 (TS: 1681338455)
+    CANCUN = 17,          // Cancun	                TBD
     #[default]
     LATEST = u8::MAX,
 }
@@ -93,6 +67,54 @@ pub enum SpecId {
     LATEST = u8::MAX,
 }
 
+#[cfg(feature = "bsc")]
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, enumn::N)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum SpecId {
+    FRONTIER = 0,
+    FRONTIER_THAWING = 1,
+    HOMESTEAD = 2, // Homestead                  0
+    EIP158 = 3,    // EIP158                     0
+    BYZANTIUM = 4, // Byzantium                  0
+    CONSTANTINOPLE = 5, // Constantinople        0
+    PETERSBURG = 6, // Petersburg                0
+    ISTANBUL = 7,  // Istanbul                   0
+    MUIR_GLACIER = 8, // Muir Glacier            0
+    RAMANUJAN = 9, // Ramanujan                  0
+    NIELS = 10,     // Niels                     0
+    MIRROR_SYNC = 11, // Mirror Sync             5184000
+    BRUNO = 12,    // Bruno                      13082000
+    EULER = 13,    // Euler                      18907621
+    NANO = 14,     // Nano                       21962149
+    MORAN = 15,   // Moran                       22107423
+    GIBBS = 16,   // Gibbs                       23846001
+    PLANCK = 17,  // Planck                      27281024
+    LUBAN = 18,   // Luban                       29020050
+    PLATO = 19,   // Plato                       30720096
+    BERLIN = 20,  // Berlin                      31302048
+    LONDON = 21,  // London                      31302048
+    HERTZ = 22,   // Hertz                       31302048
+    HERTZ_FIX = 23, // HertzFix                  34140700
+    SHANGHAI = 24, // Shanghai                   timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    KEPLER = 25,  // Kepler                      timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    FEYNMAN = 26, // Feynman                     timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    FEYNMAN_FIX = 27, // FeynmanFix              timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    CANCUN = 28,  // Cancun                      timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
+
+    // TODO: or u8::MAX - 1?
+    /// Not enabled in bsc
+    DAO_FORK = 29,
+    TANGERINE = 30,
+    SPURIOUS_DRAGON = 31,
+    ARROW_GLACIER = 32,
+    GRAY_GLACIER = 33,
+    MERGE = 34,
+
+    #[default]
+    LATEST = u8::MAX,
+}
+
 impl SpecId {
     #[inline]
     pub fn try_from_u8(spec_id: u8) -> Option<Self> {
@@ -126,13 +148,6 @@ impl From<&str> for SpecId {
             "Merge" => Self::MERGE,
             "Shanghai" => Self::SHANGHAI,
             "Cancun" => Self::CANCUN,
-            "Nano" => Self::NANO,
-            "Moran" => Self::MORAN,
-            "Planck" => Self::PLANCK,
-            "Luban" => Self::LUBAN,
-            "Plato" => Self::PLATO,
-            "Hertz" => Self::HERTZ,
-            "Feynman" => Self::FEYNMAN,
             #[cfg(feature = "optimism")]
             "Bedrock" => SpecId::BEDROCK,
             #[cfg(feature = "optimism")]
@@ -145,6 +160,40 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fermat" => SpecId::FERMAT,
+            #[cfg(feature = "bsc")]
+            "EIP158" => SpecId::EIP158,
+            #[cfg(feature = "bsc")]
+            "Ramanujan" => SpecId::RAMANUJAN,
+            #[cfg(feature = "bsc")]
+            "Niels" => SpecId::NIELS,
+            #[cfg(feature = "bsc")]
+            "MirrorSync" => SpecId::MIRROR_SYNC,
+            #[cfg(feature = "bsc")]
+            "Bruno" => SpecId::BRUNO,
+            #[cfg(feature = "bsc")]
+            "Euler" => SpecId::EULER,
+            #[cfg(feature = "bsc")]
+            "Nano" => SpecId::NANO,
+            #[cfg(feature = "bsc")]
+            "Moran" => SpecId::MORAN,
+            #[cfg(feature = "bsc")]
+            "Gibbs" => SpecId::GIBBS,
+            #[cfg(feature = "bsc")]
+            "Planck" => SpecId::PLANCK,
+            #[cfg(feature = "bsc")]
+            "Luban" => SpecId::LUBAN,
+            #[cfg(feature = "bsc")]
+            "Plato" => SpecId::PLATO,
+            #[cfg(feature = "bsc")]
+            "Hertz" => SpecId::HERTZ,
+            #[cfg(feature = "bsc")]
+            "HertzFix" => SpecId::HERTZ_FIX,
+            #[cfg(feature = "bsc")]
+            "Kepler" => SpecId::KEPLER,
+            #[cfg(feature = "bsc")]
+            "Feynman" => SpecId::FEYNMAN,
+            #[cfg(feature = "bsc")]
+            "FeynmanFix" => SpecId::FEYNMAN_FIX,
             _ => Self::LATEST,
         }
     }
@@ -171,13 +220,6 @@ impl From<SpecId> for &'static str {
             SpecId::MERGE => "Merge",
             SpecId::SHANGHAI => "Shanghai",
             SpecId::CANCUN => "Cancun",
-            SpecId::NANO => "Nano",
-            SpecId::MORAN => "Moran",
-            SpecId::PLANCK => "Planck",
-            SpecId::LUBAN => "Luban",
-            SpecId::PLATO => "Plato",
-            SpecId::HERTZ => "Hertz",
-            SpecId::FEYNMAN => "Feynman",
             #[cfg(feature = "optimism")]
             SpecId::BEDROCK => "Bedrock",
             #[cfg(feature = "optimism")]
@@ -188,6 +230,40 @@ impl From<SpecId> for &'static str {
             SpecId::CANYON => "Canyon",
             #[cfg(feature = "optimism")]
             SpecId::ECOTONE => "Ecotone",
+            #[cfg(feature = "bsc")]
+            SpecId::EIP158 => "EIP158",
+            #[cfg(feature = "bsc")]
+            SpecId::RAMANUJAN => "Ramanujan",
+            #[cfg(feature = "bsc")]
+            SpecId::NIELS => "Niels",
+            #[cfg(feature = "bsc")]
+            SpecId::MIRROR_SYNC => "MirrorSync",
+            #[cfg(feature = "bsc")]
+            SpecId::BRUNO => "Bruno",
+            #[cfg(feature = "bsc")]
+            SpecId::EULER => "Euler",
+            #[cfg(feature = "bsc")]
+            SpecId::NANO => "Nano",
+            #[cfg(feature = "bsc")]
+            SpecId::MORAN => "Moran",
+            #[cfg(feature = "bsc")]
+            SpecId::GIBBS => "Gibbs",
+            #[cfg(feature = "bsc")]
+            SpecId::PLANCK => "Planck",
+            #[cfg(feature = "bsc")]
+            SpecId::LUBAN => "Luban",
+            #[cfg(feature = "bsc")]
+            SpecId::PLATO => "Plato",
+            #[cfg(feature = "bsc")]
+            SpecId::HERTZ => "Hertz",
+            #[cfg(feature = "bsc")]
+            SpecId::HERTZ_FIX => "HertzFix",
+            #[cfg(feature = "bsc")]
+            SpecId::KEPLER => "Kepler",
+            #[cfg(feature = "bsc")]
+            SpecId::FEYNMAN => "Feynman",
+            #[cfg(feature = "bsc")]
+            SpecId::FEYNMAN_FIX => "FeynmanFix",
             SpecId::LATEST => "Latest",
         }
     }
@@ -237,14 +313,35 @@ spec!(CANCUN, CancunSpec);
 spec!(LATEST, LatestSpec);
 
 // BSC Hardforks
+// TODO: some of these hardforks may have no EVM spec change
+#[cfg(feature = "bsc")]
+spec!(MIRROR_SYNC, MirrorSyncSpec);
+#[cfg(feature = "bsc")]
+spec!(BRUNO, BrunoSpec);
+#[cfg(feature = "bsc")]
+spec!(EULER, EulerSpec);
+#[cfg(feature = "bsc")]
 spec!(NANO, NanoSpec);
+#[cfg(feature = "bsc")]
 spec!(MORAN, MoranSpec);
+#[cfg(feature = "bsc")]
+spec!(GIBBS, GibbsSpec);
+#[cfg(feature = "bsc")]
 spec!(PLANCK, PlanckSpec);
+#[cfg(feature = "bsc")]
 spec!(LUBAN, LubanSpec);
+#[cfg(feature = "bsc")]
 spec!(PLATO, PlatoSpec);
+#[cfg(feature = "bsc")]
 spec!(HERTZ, HertzSpec);
-spec!(FEYNMAN, FeynmanSpec); 
-
+#[cfg(feature = "bsc")]
+spec!(HERTZ_FIX, HertzFixSpec);
+#[cfg(feature = "bsc")]
+spec!(KEPLER, KeplerSpec);
+#[cfg(feature = "bsc")]
+spec!(FEYNMAN, FeynmanSpec);
+#[cfg(feature = "bsc")]
+spec!(FEYNMAN_FIX, FeynmanFixSpec);
 
 // Optimism Hardforks
 #[cfg(feature = "optimism")]
