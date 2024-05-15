@@ -26,7 +26,7 @@ c-kzg = { version = "1.0.0", default-features = false, optional = true }
 
 # ecRecover precompile
 k256 = { version = "0.13.3", default-features = false, features = ["ecdsa"] }
-secp256k1 = { version = "0.28.2", default-features = false, features = [
+secp256k1 = { version = "0.29.0", default-features = false, features = [
     "alloc",
     "recovery",
     "rand",
@@ -38,6 +38,13 @@ cometbft-proto = { version = "0.1.0-alpha.2" }
 cometbft-light-client = { version = "0.1.0-alpha.2" }
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
+tendermint = { git = "https://github.com/forcodedancing/tendermint-rs-parlia", rev = "10cfd14bac4cd4f1180a6670ea44edabfeda2519", features = ["secp256k1"] }
+parity-bytes = { version = "0.1.2", default-features = false }
+alloy-rlp = { version = "0.3", default-features = false, features = [
+    "arrayvec",
+    "derive",
+] }
+alloy-primitives = {version = "0.7.0"}
 
 [dev-dependencies]
 criterion = { version = "0.5" }
@@ -86,6 +93,8 @@ opbnb-default-handler = [
 negate-opbnb-default-handler = [
     "revm-primitives/negate-opbnb-default-handler",
 ]
+
+bsc = ["revm-primitives/bsc"]
 
 [[bench]]
 name = "bench"

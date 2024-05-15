@@ -95,3 +95,5 @@ c-kzg = ["dep:c-kzg", "dep:once_cell", "dep:derive_more"]
 opbnb = []
 opbnb-default-handler = ["opbnb"]
 negate-opbnb-default-handler = []
+
+bsc = []

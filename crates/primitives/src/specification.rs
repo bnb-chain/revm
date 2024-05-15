@@ -10,24 +10,50 @@ pub use SpecId::*;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, enumn::N)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SpecId {
-    FRONTIER = 0,         // Frontier	            0
-    FRONTIER_THAWING = 1, // Frontier Thawing       200000
-    HOMESTEAD = 2,        // Homestead	            1150000
-    DAO_FORK = 3,         // DAO Fork	            1920000
-    TANGERINE = 4,        // Tangerine Whistle	    2463000
-    SPURIOUS_DRAGON = 5,  // Spurious Dragon        2675000
-    BYZANTIUM = 6,        // Byzantium	            4370000
-    CONSTANTINOPLE = 7,   // Constantinople         7280000 is overwritten with PETERSBURG
-    PETERSBURG = 8,       // Petersburg             7280000
-    ISTANBUL = 9,         // Istanbul	            9069000
-    MUIR_GLACIER = 10,    // Muir Glacier	        9200000
-    BERLIN = 11,          // Berlin	                12244000
-    LONDON = 12,          // London	                12965000
-    ARROW_GLACIER = 13,   // Arrow Glacier	        13773000
-    GRAY_GLACIER = 14,    // Gray Glacier	        15050000
-    MERGE = 15,           // Paris/Merge	        15537394 (TTD: 58750000000000000000000)
-    SHANGHAI = 16,        // Shanghai	            17034870 (TS: 1681338455)
-    CANCUN = 17,          // Cancun	                TBD
+    FRONTIER = 0,
+    // Frontier	            0
+    FRONTIER_THAWING = 1,
+    // Frontier Thawing       200000
+    HOMESTEAD = 2,
+    // Homestead	            1150000
+    DAO_FORK = 3,
+    // DAO Fork	            1920000
+    TANGERINE = 4,
+    // Tangerine Whistle	    2463000
+    SPURIOUS_DRAGON = 5,
+    // Spurious Dragon        2675000
+    BYZANTIUM = 6,
+    // Byzantium	            4370000
+    CONSTANTINOPLE = 7,
+    // Constantinople         7280000 is overwritten with PETERSBURG
+    PETERSBURG = 8,
+    // Petersburg             7280000
+    ISTANBUL = 9,
+    // Istanbul	            9069000
+    MUIR_GLACIER = 10,
+    // Muir Glacier	        9200000
+    BERLIN = 11,
+    // Berlin	                12244000
+    LONDON = 12,
+    // London	                12965000
+    ARROW_GLACIER = 13,
+    // Arrow Glacier	        13773000
+    GRAY_GLACIER = 14,
+    // Gray Glacier	        15050000
+    MERGE = 15,
+    // Paris/Merge	        15537394 (TTD: 58750000000000000000000)
+    SHANGHAI = 16,
+    // Shanghai	            17034870 (TS: 1681338455)
+    CANCUN = 17,
+    // Cancun	                TBD
+    NANO = 18,
+    MORAN = 19,
+    PLANCK = 20,
+    LUBAN = 21,
+    PLATO = 22,
+    HERTZ = 23,
+    FEYNMAN = 24,
+
     #[default]
     LATEST = u8::MAX,
 }
@@ -100,6 +126,13 @@ impl From<&str> for SpecId {
             "Merge" => Self::MERGE,
             "Shanghai" => Self::SHANGHAI,
             "Cancun" => Self::CANCUN,
+            "Nano" => Self::NANO,
+            "Moran" => Self::MORAN,
+            "Planck" => Self::PLANCK,
+            "Luban" => Self::LUBAN,
+            "Plato" => Self::PLATO,
+            "Hertz" => Self::HERTZ,
+            "Feynman" => Self::FEYNMAN,
             #[cfg(feature = "optimism")]
             "Bedrock" => SpecId::BEDROCK,
             #[cfg(feature = "optimism")]
@@ -110,6 +143,8 @@ impl From<&str> for SpecId {
             "Canyon" => SpecId::CANYON,
             #[cfg(feature = "optimism")]
             "Ecotone" => SpecId::ECOTONE,
+            #[cfg(feature = "optimism")]
+            "Fermat" => SpecId::FERMAT,
             _ => Self::LATEST,
         }
     }
@@ -136,6 +171,13 @@ impl From<SpecId> for &'static str {
             SpecId::MERGE => "Merge",
             SpecId::SHANGHAI => "Shanghai",
             SpecId::CANCUN => "Cancun",
+            SpecId::NANO => "Nano",
+            SpecId::MORAN => "Moran",
+            SpecId::PLANCK => "Planck",
+            SpecId::LUBAN => "Luban",
+            SpecId::PLATO => "Plato",
+            SpecId::HERTZ => "Hertz",
+            SpecId::FEYNMAN => "Feynman",
             #[cfg(feature = "optimism")]
             SpecId::BEDROCK => "Bedrock",
             #[cfg(feature = "optimism")]
@@ -193,6 +235,16 @@ spec!(SHANGHAI, ShanghaiSpec);
 spec!(CANCUN, CancunSpec);
 
 spec!(LATEST, LatestSpec);
+
+// BSC Hardforks
+spec!(NANO, NanoSpec);
+spec!(MORAN, MoranSpec);
+spec!(PLANCK, PlanckSpec);
+spec!(LUBAN, LubanSpec);
+spec!(PLATO, PlatoSpec);
+spec!(HERTZ, HertzSpec);
+spec!(FEYNMAN, FeynmanSpec); 
+
 
 // Optimism Hardforks
 #[cfg(feature = "optimism")]
@@ -261,6 +313,34 @@ macro_rules! spec_to_generic {
                 use $crate::CancunSpec as SPEC;
                 $e
             }
+            $crate::SpecId::NANO => {
+                use $crate::NanoSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::MORAN => {
+                use $crate::MoranSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLANCK => {
+                use $crate::PlanckSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::LUBAN => {
+                use $crate::LubanSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLATO => {
+                use $crate::PlatoSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::HERTZ => {
+                use $crate::HertzSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::FEYNMAN => {
+                use $crate::FeynmanSpec as SPEC;
+                $e
+            }
             $crate::SpecId::LATEST => {
                 use $crate::LatestSpec as SPEC;
                 $e
@@ -325,8 +405,18 @@ mod tests {
         spec_to_generic!(SHANGHAI, assert_eq!(SPEC::SPEC_ID, SHANGHAI));
         #[cfg(feature = "optimism")]
         spec_to_generic!(CANYON, assert_eq!(SPEC::SPEC_ID, CANYON));
+        #[cfg(feature = "optimism")]
         spec_to_generic!(CANCUN, assert_eq!(SPEC::SPEC_ID, CANCUN));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
+
+        spec_to_generic!(NANO, assert_eq!(SPEC::SPEC_ID, NANO));
+        spec_to_generic!(MORAN, assert_eq!(SPEC::SPEC_ID, MORAN));
+        spec_to_generic!(PLANCK, assert_eq!(SPEC::SPEC_ID, PLANCK));
+        spec_to_generic!(LUBAN, assert_eq!(SPEC::SPEC_ID, LUBAN));
+        spec_to_generic!(PLATO, assert_eq!(SPEC::SPEC_ID, PLATO));
+        spec_to_generic!(HERTZ, assert_eq!(SPEC::SPEC_ID, HERTZ));
+        spec_to_generic!(FEYNMAN, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
+
     }
 }
 
