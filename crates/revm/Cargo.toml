@@ -111,8 +111,6 @@ opbnb-default-handler = [
     "revm-interpreter/opbnb-default-handler",
 ]
 
-bsc = ["revm-precompile/bsc"]
-
 [[example]]
 name = "fork_ref_transact"
 path = "../../examples/fork_ref_transact.rs"
