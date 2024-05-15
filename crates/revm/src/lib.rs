@@ -25,6 +25,8 @@ mod inspector;
 mod journaled_state;
 #[cfg(feature = "optimism")]
 pub mod optimism;
+#[cfg(feature = "bsc")]
+pub mod bsc;
 
 // Export items.
 

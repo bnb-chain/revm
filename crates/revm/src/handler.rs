@@ -42,6 +42,7 @@ impl<'a, EXT, DB: Database> EvmHandler<'a, EXT, DB> {
     ///
     /// Internally it calls `mainnet_with_spec` with the given spec id.
     /// Or `optimism_with_spec` if the optimism feature is enabled and `cfg.is_optimism` is set.
+    /// Or `bsc_with_spec` if the bsc feature is enabled and `cfg.is_bsc` is set.
     pub fn new(cfg: HandlerCfg) -> Self {
         cfg_if::cfg_if! {
             if #[cfg(feature = "optimism")] {
@@ -50,6 +51,8 @@ impl<'a, EXT, DB: Database> EvmHandler<'a, EXT, DB> {
                 } else {
                     Handler::mainnet_with_spec(cfg.spec_id)
                 }
+            } else if #[cfg(feature = "bsc")] {
+                Handler::bsc_with_spec(cfg.spec_id)
             } else {
                 Handler::mainnet_with_spec(cfg.spec_id)
             }
@@ -67,6 +70,12 @@ impl<'a, EXT, DB: Database> EvmHandler<'a, EXT, DB> {
             post_execution: PostExecutionHandler::new::<SPEC>(),
             execution: ExecutionHandler::new::<SPEC>(),
         }
+    }
+
+    /// Creates handler with variable spec id, inside it will call `mainnet::<SPEC>` for
+    /// appropriate spec.
+    pub fn mainnet_with_spec(spec_id: SpecId) -> Self {
+        spec_to_generic!(spec_id, Self::mainnet::<SPEC>())
     }
 
     /// Returns `true` if the optimism feature is enabled and flag is set to `true`.
@@ -91,10 +100,26 @@ impl<'a, EXT, DB: Database> EvmHandler<'a, EXT, DB> {
         spec_to_generic!(spec_id, Self::optimism::<SPEC>())
     }
 
-    /// Creates handler with variable spec id, inside it will call `mainnet::<SPEC>` for
-    /// appropriate spec.
-    pub fn mainnet_with_spec(spec_id: SpecId) -> Self {
-        spec_to_generic!(spec_id, Self::mainnet::<SPEC>())
+    /// Returns `true` if the bsc feature is enabled and flag is set to `true`.
+    pub fn is_bsc(&self) -> bool {
+        self.cfg.is_bsc()
+    }
+
+    /// Handler for bsc
+    #[cfg(feature = "bsc")]
+    pub fn bsc<SPEC: Spec>() -> Self {
+        let mut handler = Self::mainnet::<SPEC>();
+        handler.cfg.is_bsc = true;
+        handler.append_handler_register(HandleRegisters::Plain(
+            crate::bsc::bsc_handle_register::<DB, EXT>,
+        ));
+        handler
+    }
+
+    /// Bsc with spec. Similar to [`Self::mainnet_with_spec`].
+    #[cfg(feature = "bsc")]
+    pub fn bsc_with_spec(spec_id: SpecId) -> Self {
+        spec_to_generic!(spec_id, Self::bsc::<SPEC>())
     }
 
     /// Specification ID.

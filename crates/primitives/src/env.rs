@@ -542,6 +542,10 @@ pub struct TxEnv {
     #[cfg_attr(feature = "serde", serde(flatten))]
     #[cfg(feature = "optimism")]
     pub optimism: OptimismFields,
+
+    #[cfg_attr(feature = "serde", serde(flatten))]
+    #[cfg(feature = "bsc")]
+    pub bsc: BscFields,
 }
 
 impl TxEnv {
@@ -577,6 +581,8 @@ impl Default for TxEnv {
             max_fee_per_blob_gas: None,
             #[cfg(feature = "optimism")]
             optimism: OptimismFields::default(),
+            #[cfg(feature = "bsc")]
+            bsc: BscFields::default(),
         }
     }
 }
@@ -638,6 +644,15 @@ pub struct OptimismFields {
     /// for non-optimism chains when the `optimism` feature is enabled,
     /// but the [CfgEnv] `optimism` field is set to false.
     pub enveloped_tx: Option<Bytes>,
+}
+
+/// Additional [TxEnv] fields for bsc.
+#[cfg(feature = "bsc")]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct BscFields {
+    /// Whether the transaction is a system transaction.
+    pub is_system_transaction: Option<bool>,
 }
 
 /// Transaction destination.
