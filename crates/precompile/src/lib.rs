@@ -35,6 +35,7 @@ pub use revm_primitives::{
     Address, Bytes, HashMap, Log, B256,
 };
 use std::{boxed::Box, vec::Vec};
+use revm_primitives::{FEYNMAN, HERTZ, LUBAN, PLANCK, PLATO};
 
 pub fn calc_linear_cost_u32(len: usize, base: u64, word: u64) -> u64 {
     (len as u64 + 32 - 1) / 32 * word + base
@@ -418,9 +419,28 @@ impl PrecompileSpecId {
             FRONTIER | FRONTIER_THAWING | HOMESTEAD | DAO_FORK | TANGERINE | SPURIOUS_DRAGON => {
                 Self::HOMESTEAD
             }
+            #[cfg(feature = "bsc")]
+            EIP158 => Self::HOMESTEAD,
             BYZANTIUM | CONSTANTINOPLE | PETERSBURG => Self::BYZANTIUM,
             ISTANBUL | MUIR_GLACIER => Self::ISTANBUL,
+            #[cfg(feature = "bsc")]
+            RAMANUJAN | NIELS | MIRROR_SYNC | BRUNO | EULER => Self::ISTANBUL,
+            #[cfg(feature = "bsc")]
+            NANO => Self::NANO,
+            #[cfg(feature = "bsc")]
+            MORAN | GIBBS => Self::MORAN,
+            #[cfg(feature = "bsc")]
+            PLANCK => Self::PLANCK,
+            #[cfg(feature = "bsc")]
+            LUBAN => Self::LUBAN,
+            #[cfg(feature = "bsc")]
+            PLATO => Self::PLATO,
+            #[cfg(feature = "bsc")]
             BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE | SHANGHAI => Self::BERLIN,
+            #[cfg(feature = "bsc")]
+            HERTZ | HERTZ_FIX | KEPLER => Self::HERTZ,
+            #[cfg(feature = "bsc")]
+            FEYNMAN | FEYNMAN_FIX => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
             LATEST => Self::LATEST,
             #[cfg(feature = "optimism")]
@@ -429,14 +449,6 @@ impl PrecompileSpecId {
             ECOTONE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
-            //#[cfg(feature = "bsc")]
-            NANO => Self::NANO,
-            MORAN => Self::MORAN,
-            PLANCK => Self::PLANCK,
-            LUBAN => Self::LUBAN,
-            PLATO => Self::PLATO,
-            HERTZ => Self::HERTZ,
-            FEYNMAN => Self::FEYNMAN,
         }
     }
 }
