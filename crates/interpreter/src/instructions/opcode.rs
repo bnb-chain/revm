@@ -953,87 +953,87 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::ECOTONE => {
+                SpecId::EIP158 => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::EIP158);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::RAMANUJAN => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::RAMANUJAN);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::NIELS => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::NIELS);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::MIRROR_SYNC => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::MIRROR_SYNC);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::BRUNO => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::BRUNO);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::EULER => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::EULER);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::NANO => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::NANO);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::MORAN => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::MORAN);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::GIBBS => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::GIBBS);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::PLANCK => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::PLANCK);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::LUBAN => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::LUBAN);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::PLATO => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::PLATO);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::HERTZ => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::HERTZ);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::HERTZ_FIX => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::HERTZ_FIX);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::KEPLER => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::KEPLER);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::FEYNMAN => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FEYNMAN);
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::BSC => {
+                SpecId::FEYNMAN_FIX => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FEYNMAN_FIX);
                     TABLE
                 }

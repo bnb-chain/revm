@@ -594,17 +594,44 @@ mod tests {
         #[cfg(feature = "optimism")]
         spec_to_generic!(CANYON, assert_eq!(SPEC::SPEC_ID, CANYON));
         #[cfg(feature = "optimism")]
+        spec_to_generic!(ECOTONE, assert_eq!(SPEC::SPEC_ID, ECOTONE));
         spec_to_generic!(CANCUN, assert_eq!(SPEC::SPEC_ID, CANCUN));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
 
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(EIP158, assert_eq!(SPEC::SPEC_ID, EIP158));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(RAMANUJAN, assert_eq!(SPEC::SPEC_ID, RAMANUJAN));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(NIELS, assert_eq!(SPEC::SPEC_ID, NIELS));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(MIRROR_SYNC, assert_eq!(SPEC::SPEC_ID, MIRROR_SYNC));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(BRUNO, assert_eq!(SPEC::SPEC_ID, BRUNO));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(EULER, assert_eq!(SPEC::SPEC_ID, EULER));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(NANO, assert_eq!(SPEC::SPEC_ID, NANO));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(MORAN, assert_eq!(SPEC::SPEC_ID, MORAN));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(GIBBS, assert_eq!(SPEC::SPEC_ID, GIBBS));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(PLANCK, assert_eq!(SPEC::SPEC_ID, PLANCK));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(LUBAN, assert_eq!(SPEC::SPEC_ID, LUBAN));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(PLATO, assert_eq!(SPEC::SPEC_ID, PLATO));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(HERTZ, assert_eq!(SPEC::SPEC_ID, HERTZ));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(HERTZ_FIX, assert_eq!(SPEC::SPEC_ID, HERTZ_FIX));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(KEPLER, assert_eq!(SPEC::SPEC_ID, KEPLER));
+        #[cfg(feature = "bsc")]
         spec_to_generic!(FEYNMAN, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
-
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(FEYNMAN_FIX, assert_eq!(SPEC::SPEC_ID, FEYNMAN_FIX));
     }
 }
 
