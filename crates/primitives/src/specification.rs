@@ -315,6 +315,12 @@ spec!(LATEST, LatestSpec);
 // BSC Hardforks
 // TODO: some of these hardforks may have no EVM spec change
 #[cfg(feature = "bsc")]
+spec!(EIP158, EIP158Spec);
+#[cfg(feature = "bsc")]
+spec!(RAMANUJAN, RamanujanSpec);
+#[cfg(feature = "bsc")]
+spec!(NIELS, NielsSpec);
+#[cfg(feature = "bsc")]
 spec!(MIRROR_SYNC, MirrorSyncSpec);
 #[cfg(feature = "bsc")]
 spec!(BRUNO, BrunoSpec);
@@ -465,6 +471,91 @@ macro_rules! spec_to_generic {
             #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
                 use $crate::FermatSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::EIP158 => {
+                use $crate::EIP158Spec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::RAMANUJAN => {
+                use $crate::RamanujanSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::NIELS => {
+                use $crate::NielsSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::MIRROR_SYNC => {
+                use $crate::MirrorSyncSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::BRUNO => {
+                use $crate::BrunoSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::EULER => {
+                use $crate::EulerSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::NANO => {
+                use $crate::NanoSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::MORAN => {
+                use $crate::MoranSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::GIBBS => {
+                use $crate::GibbsSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::PLANCK => {
+                use $crate::PlanckSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::LUBAN => {
+                use $crate::LubanSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::PLATO => {
+                use $crate::PlatoSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::HERTZ => {
+                use $crate::HertzSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::HERTZ_FIX => {
+                use $crate::HertzFixSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::KEPLER => {
+                use $crate::KeplerSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::FEYNMAN => {
+                use $crate::FeynmanSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "bsc")]
+            $crate::SpecId::FEYNMAN_FIX => {
+                use $crate::FeynmanFixSpec as SPEC;
                 $e
             }
         }
