@@ -953,11 +953,6 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
                     TABLE
                 }
                 #[cfg(feature = "bsc")]
-                SpecId::EIP158 => {
-                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::EIP158);
-                    TABLE
-                }
-                #[cfg(feature = "bsc")]
                 SpecId::RAMANUJAN => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::RAMANUJAN);
                     TABLE

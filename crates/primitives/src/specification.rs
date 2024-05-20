@@ -74,42 +74,41 @@ pub enum SpecId {
 pub enum SpecId {
     FRONTIER = 0,
     FRONTIER_THAWING = 1,
-    HOMESTEAD = 2, // Homestead                  0
-    EIP158 = 3,    // EIP158                     0
-    BYZANTIUM = 4, // Byzantium                  0
-    CONSTANTINOPLE = 5, // Constantinople        0
-    PETERSBURG = 6, // Petersburg                0
-    ISTANBUL = 7,  // Istanbul                   0
-    MUIR_GLACIER = 8, // Muir Glacier            0
-    RAMANUJAN = 9, // Ramanujan                  0
-    NIELS = 10,     // Niels                     0
-    MIRROR_SYNC = 11, // Mirror Sync             5184000
-    BRUNO = 12,    // Bruno                      13082000
-    EULER = 13,    // Euler                      18907621
-    NANO = 14,     // Nano                       21962149
-    MORAN = 15,   // Moran                       22107423
-    GIBBS = 16,   // Gibbs                       23846001
-    PLANCK = 17,  // Planck                      27281024
-    LUBAN = 18,   // Luban                       29020050
-    PLATO = 19,   // Plato                       30720096
-    BERLIN = 20,  // Berlin                      31302048
-    LONDON = 21,  // London                      31302048
-    HERTZ = 22,   // Hertz                       31302048
-    HERTZ_FIX = 23, // HertzFix                  34140700
-    SHANGHAI = 24, // Shanghai                   timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    KEPLER = 25,  // Kepler                      timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    FEYNMAN = 26, // Feynman                     timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    FEYNMAN_FIX = 27, // FeynmanFix              timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    CANCUN = 28,  // Cancun                      timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
+    HOMESTEAD = 2, // Homestead                                0
+    TANGERINE = 3, // Tangerine Whistle(EIP150)                0
+    SPURIOUS_DRAGON = 4, // Spurious Dragon(EIP155, EIP158)    0
+    BYZANTIUM = 5, // Byzantium                                0
+    CONSTANTINOPLE = 6, // Constantinople                      0
+    PETERSBURG = 7, // Petersburg                              0
+    ISTANBUL = 8,  // Istanbul                                 0
+    MUIR_GLACIER = 9, // Muir Glacier                          0
+    RAMANUJAN = 10, // Ramanujan                               0
+    NIELS = 11,     // Niels                                   0
+    MIRROR_SYNC = 12, // Mirror Sync                           5184000
+    BRUNO = 13,    // Bruno                                    13082000
+    EULER = 14,    // Euler                                    18907621
+    NANO = 15,     // Nano                                     21962149
+    MORAN = 16,   // Moran                                     22107423
+    GIBBS = 17,   // Gibbs                                     23846001
+    PLANCK = 18,  // Planck                                    27281024
+    LUBAN = 19,   // Luban                                     29020050
+    PLATO = 20,   // Plato                                     30720096
+    BERLIN = 21,  // Berlin                                    31302048
+    LONDON = 22,  // London                                    31302048
+    HERTZ = 23,   // Hertz                                     31302048
+    HERTZ_FIX = 24, // HertzFix                                34140700
+    SHANGHAI = 25, // Shanghai                                 timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    KEPLER = 26,  // Kepler                                    timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    FEYNMAN = 27, // Feynman                                   timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    FEYNMAN_FIX = 28, // FeynmanFix                            timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    CANCUN = 29,  // Cancun                                    timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
 
     // TODO: or u8::MAX - 1?
     /// Not enabled in bsc
-    DAO_FORK = 29,
-    TANGERINE = 30,
-    SPURIOUS_DRAGON = 31,
-    ARROW_GLACIER = 32,
-    GRAY_GLACIER = 33,
-    MERGE = 34,
+    DAO_FORK = 30,
+    ARROW_GLACIER = 31,
+    GRAY_GLACIER = 32,
+    MERGE = 33,
 
     #[default]
     LATEST = u8::MAX,
@@ -160,8 +159,6 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fermat" => SpecId::FERMAT,
-            #[cfg(feature = "bsc")]
-            "EIP158" => SpecId::EIP158,
             #[cfg(feature = "bsc")]
             "Ramanujan" => SpecId::RAMANUJAN,
             #[cfg(feature = "bsc")]
@@ -230,8 +227,6 @@ impl From<SpecId> for &'static str {
             SpecId::CANYON => "Canyon",
             #[cfg(feature = "optimism")]
             SpecId::ECOTONE => "Ecotone",
-            #[cfg(feature = "bsc")]
-            SpecId::EIP158 => "EIP158",
             #[cfg(feature = "bsc")]
             SpecId::RAMANUJAN => "Ramanujan",
             #[cfg(feature = "bsc")]
@@ -314,8 +309,6 @@ spec!(LATEST, LatestSpec);
 
 // BSC Hardforks
 // TODO: some of these hardforks may have no EVM spec change
-#[cfg(feature = "bsc")]
-spec!(EIP158, EIP158Spec);
 #[cfg(feature = "bsc")]
 spec!(RAMANUJAN, RamanujanSpec);
 #[cfg(feature = "bsc")]
@@ -474,11 +467,6 @@ macro_rules! spec_to_generic {
                 $e
             }
             #[cfg(feature = "bsc")]
-            $crate::SpecId::EIP158 => {
-                use $crate::EIP158Spec as SPEC;
-                $e
-            }
-            #[cfg(feature = "bsc")]
             $crate::SpecId::RAMANUJAN => {
                 use $crate::RamanujanSpec as SPEC;
                 $e
@@ -598,8 +586,6 @@ mod tests {
         spec_to_generic!(CANCUN, assert_eq!(SPEC::SPEC_ID, CANCUN));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
 
-        #[cfg(feature = "bsc")]
-        spec_to_generic!(EIP158, assert_eq!(SPEC::SPEC_ID, EIP158));
         #[cfg(feature = "bsc")]
         spec_to_generic!(RAMANUJAN, assert_eq!(SPEC::SPEC_ID, RAMANUJAN));
         #[cfg(feature = "bsc")]
