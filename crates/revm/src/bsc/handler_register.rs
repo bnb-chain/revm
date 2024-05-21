@@ -58,6 +58,7 @@ pub fn collect_system_reward<SPEC: Spec, EXT, DB: Database>(
         .journaled_state
         .load_account(SYSTEM_ADDRESS, &mut context.evm.inner.db)?;
 
+    system_account.mark_touch();
     system_account.info.balance = system_account
         .info
         .balance

@@ -418,8 +418,6 @@ impl PrecompileSpecId {
             FRONTIER | FRONTIER_THAWING | HOMESTEAD | DAO_FORK | TANGERINE | SPURIOUS_DRAGON => {
                 Self::HOMESTEAD
             }
-            #[cfg(feature = "bsc")]
-            EIP158 => Self::HOMESTEAD,
             BYZANTIUM | CONSTANTINOPLE | PETERSBURG => Self::BYZANTIUM,
             ISTANBUL | MUIR_GLACIER => Self::ISTANBUL,
             #[cfg(feature = "bsc")]
