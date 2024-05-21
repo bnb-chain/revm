@@ -11,7 +11,9 @@
 extern crate alloc as std;
 
 pub mod blake2;
+mod bls;
 pub mod bn128;
+mod cometbft;
 pub mod hash;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
@@ -64,6 +66,7 @@ impl Precompiles {
             PrecompileSpecId::BYZANTIUM => Self::byzantium(),
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
+            PrecompileSpecId::FERMAT => Self::fermat(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
@@ -132,6 +135,26 @@ impl Precompiles {
         })
     }
 
+    /// Returns precompiles for Fermat spec.
+    ///
+    /// effectively making this the same as Berlin.
+    pub fn fermat() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::berlin().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+                ]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
     /// Returns precompiles for Cancun spec.
     ///
     /// If the `c-kzg` feature is not enabled KZG Point Evaluation precompile will not be included,
@@ -148,6 +171,10 @@ impl Precompiles {
                 precompiles.extend([
                     // EIP-4844: Shard Blob Transactions
                     kzg_point_evaluation::POINT_EVALUATION,
+                    #[cfg(feature = "opbnb")]
+                    bls::BLS_SIGNATURE_VALIDATION,
+                    #[cfg(feature = "opbnb")]
+                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
                 ]);
                 precompiles
             };
@@ -230,6 +257,7 @@ pub enum PrecompileSpecId {
     BYZANTIUM,
     ISTANBUL,
     BERLIN,
+    FERMAT,
     CANCUN,
     LATEST,
 }
@@ -251,6 +279,8 @@ impl PrecompileSpecId {
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
             ECOTONE => Self::CANCUN,
+            #[cfg(feature = "opbnb")]
+            FERMAT => Self::FERMAT,
         }
     }
 }

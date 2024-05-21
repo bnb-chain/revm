@@ -125,6 +125,16 @@ pub enum PrecompileError {
     BlobMismatchedVersion,
     /// The proof verification failed.
     BlobVerifyKzgProofFailed,
+    /// The input length is not matching the expected length.
+    BLSInvalidInputLength,
+    /// The bls signature is invalid.
+    BLSInvalidSignature,
+    /// The bls public key is invalid.
+    BLSInvalidPublicKey,
+    /// The cometbft validation input is invalid.
+    CometBftInvalidInput,
+    /// The cometbft consensus state encoding failed.
+    CometBftEncodeConsensusStateFailed,
     /// Catch-all variant for other errors.
     Other(String),
 }
@@ -153,6 +163,11 @@ impl fmt::Display for PrecompileError {
             Self::BlobInvalidInputLength => "invalid blob input length",
             Self::BlobMismatchedVersion => "mismatched blob version",
             Self::BlobVerifyKzgProofFailed => "verifying blob kzg proof failed",
+            Self::BLSInvalidInputLength => "invalid input length for BLS",
+            Self::BLSInvalidSignature => "invalid BLS signature",
+            Self::BLSInvalidPublicKey => "invalid BLS public key",
+            Self::CometBftInvalidInput => "invalid cometbft light block validation input",
+            Self::CometBftEncodeConsensusStateFailed => "failed to encode cometbft consensus state",
             Self::Other(s) => s,
         };
         f.write_str(s)
