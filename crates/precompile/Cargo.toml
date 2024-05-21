@@ -32,10 +32,10 @@ secp256k1 = { version = "0.28.2", default-features = false, features = [
     "rand",
     "global-context",
 ], optional = true }
-cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "4e77e57" }
-cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "4e77e57" }
-cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "4e77e57" }
-cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "4e77e57" }
+cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
+cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
+cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
+cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
 
