@@ -12,6 +12,7 @@ pub mod blake2;
 mod bls;
 #[cfg(feature = "blst")]
 pub mod bls12_381;
+mod bls;
 pub mod bn128;
 mod cometbft;
 pub mod hash;

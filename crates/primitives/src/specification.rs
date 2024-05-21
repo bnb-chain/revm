@@ -221,6 +221,8 @@ spec!(ECOTONE, EcotoneSpec);
 spec!(FERMAT, FermatSpec);
 #[cfg(feature = "optimism")]
 spec!(FJORD, FjordSpec);
+#[cfg(feature = "opbnb")]
+spec!(FERMAT, FermatSpec);
 
 #[cfg(not(feature = "optimism"))]
 #[macro_export]
@@ -374,6 +376,10 @@ macro_rules! spec_to_generic {
             }
             $crate::SpecId::FJORD => {
                 use $crate::FjordSpec as SPEC;
+            }
+            #[cfg(feature = "opbnb")]
+            $crate::SpecId::FERMAT => {
+                use $crate::FermatSpec as SPEC;
                 $e
             }
         }
