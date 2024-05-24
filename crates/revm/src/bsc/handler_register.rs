@@ -4,12 +4,12 @@ use crate::{
     handler::register::EvmHandler,
     interpreter::Gas,
     primitives::{
-        address, db::Database, spec_to_generic, Address, EVMError, Env, InvalidTransaction, Spec,
-        SpecId, U256,
+        address, db::Database, spec_to_generic, Address, EVMError, Env, ExecutionResult,
+        InvalidTransaction, ResultAndState, Spec, SpecId, U256,
     },
-    Context,
+    Context, FrameResult,
 };
-use revm_interpreter::gas;
+use revm_interpreter::{gas, SuccessOrHalt};
 use std::sync::Arc;
 
 pub const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
@@ -19,6 +19,7 @@ pub fn bsc_handle_register<DB: Database, EXT>(handler: &mut EvmHandler<'_, EXT, 
         handler.validation.initial_tx_gas = Arc::new(validate_initial_tx_gas::<SPEC, DB>);
         handler.post_execution.reward_beneficiary =
             Arc::new(collect_system_reward::<SPEC, EXT, DB>);
+        handler.post_execution.output = Arc::new(output::<EXT, DB>);
     });
 }
 
@@ -65,4 +66,50 @@ pub fn collect_system_reward<SPEC: Spec, EXT, DB: Database>(
         .saturating_add(effective_gas_price * U256::from(gas.spent() - gas.refunded() as u64));
 
     Ok(())
+}
+
+/// Main return handle, returns the output of the transaction.
+#[inline]
+pub fn output<EXT, DB: Database>(
+    context: &mut Context<EXT, DB>,
+    result: FrameResult,
+) -> Result<ResultAndState, EVMError<DB::Error>> {
+    core::mem::replace(&mut context.evm.error, Ok(()))?;
+    // used gas with refund calculated.
+    let gas_refunded = if context.evm.env.tx.bsc.is_system_transaction.unwrap_or(false) {
+        0
+    } else {
+        result.gas().refunded() as u64
+    };
+    let final_gas_used = result.gas().spent() - gas_refunded;
+    let output = result.output();
+    let instruction_result = result.into_interpreter_result();
+
+    // reset journal and return present state.
+    let (state, logs) = context.evm.journaled_state.finalize();
+
+    let result = match instruction_result.result.into() {
+        SuccessOrHalt::Success(reason) => ExecutionResult::Success {
+            reason,
+            gas_used: final_gas_used,
+            gas_refunded,
+            logs,
+            output,
+        },
+        SuccessOrHalt::Revert => {
+            ExecutionResult::Revert { gas_used: final_gas_used, output: output.into_data() }
+        }
+        SuccessOrHalt::Halt(reason) => ExecutionResult::Halt { reason, gas_used: final_gas_used },
+        // Only two internal return flags.
+        flag @ (SuccessOrHalt::FatalExternalError |
+        SuccessOrHalt::InternalContinue |
+        SuccessOrHalt::InternalCallOrCreate) => {
+            panic!(
+                "Encountered unexpected internal return flag: {:?} with instruction result: {:?}",
+                flag, instruction_result
+            )
+        }
+    };
+
+    Ok(ResultAndState { result, state })
 }
