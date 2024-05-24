@@ -409,34 +409,6 @@ macro_rules! spec_to_generic {
                 use $crate::CancunSpec as SPEC;
                 $e
             }
-            $crate::SpecId::NANO => {
-                use $crate::NanoSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::MORAN => {
-                use $crate::MoranSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::PLANCK => {
-                use $crate::PlanckSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::LUBAN => {
-                use $crate::LubanSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::PLATO => {
-                use $crate::PlatoSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::HERTZ => {
-                use $crate::HertzSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::FEYNMAN => {
-                use $crate::FeynmanSpec as SPEC;
-                $e
-            }
             $crate::SpecId::LATEST => {
                 use $crate::LatestSpec as SPEC;
                 $e
