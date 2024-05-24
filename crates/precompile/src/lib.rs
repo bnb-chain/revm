@@ -432,7 +432,6 @@ impl PrecompileSpecId {
             LUBAN => Self::LUBAN,
             #[cfg(feature = "bsc")]
             PLATO => Self::PLATO,
-            #[cfg(feature = "bsc")]
             BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE | SHANGHAI => Self::BERLIN,
             #[cfg(feature = "bsc")]
             HERTZ | HERTZ_FIX | KEPLER => Self::HERTZ,
