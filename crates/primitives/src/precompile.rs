@@ -133,6 +133,8 @@ pub enum PrecompileError {
     BLSInvalidPublicKey,
     /// The cometbft validation input is invalid.
     CometBftInvalidInput,
+    /// The cometbft apply block failed.
+    CometBftApplyBlockFailed,
     /// The cometbft consensus state encoding failed.
     CometBftEncodeConsensusStateFailed,
     /// Catch-all variant for other errors.
@@ -167,6 +169,7 @@ impl fmt::Display for PrecompileError {
             Self::BLSInvalidSignature => "invalid BLS signature",
             Self::BLSInvalidPublicKey => "invalid BLS public key",
             Self::CometBftInvalidInput => "invalid cometbft light block validation input",
+            Self::CometBftApplyBlockFailed => "failed to apply cometbft block",
             Self::CometBftEncodeConsensusStateFailed => "failed to encode cometbft consensus state",
             Self::Other(s) => s,
         };
