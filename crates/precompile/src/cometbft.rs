@@ -151,8 +151,6 @@ struct ConsensusState {
     height: u64,
     next_validator_set_hash: Bytes,
     validators: ValidatorSet,
-    relayer_address: Vec<Bytes>,
-    relayer_bls_key: Vec<Bytes>,
 }
 
 impl ConsensusState {
@@ -161,16 +159,12 @@ impl ConsensusState {
         height: u64,
         next_validator_set_hash: Bytes,
         validators: ValidatorSet,
-        relayer_address: Vec<Bytes>,
-        relayer_bls_key: Vec<Bytes>,
     ) -> Self {
         Self {
             chain_id,
             height,
             next_validator_set_hash,
             validators,
-            relayer_address,
-            relayer_bls_key,
         }
     }
 
@@ -295,11 +289,11 @@ impl ConsensusState {
             pos += VALIDATOR_VOTING_POWER_LENGTH as usize;
 
             output[pos..pos + RELAYER_ADDRESS_LENGTH as usize]
-                .copy_from_slice(self.relayer_address[i].as_ref());
+                .copy_from_slice(validator.relayer_address.as_ref());
             pos += RELAYER_ADDRESS_LENGTH as usize;
 
             output[pos..pos + RELAYER_BLS_KEY_LENGTH as usize]
-                .copy_from_slice(self.relayer_bls_key[i].as_ref());
+                .copy_from_slice(validator.bls_key.as_ref());
             pos += RELAYER_BLS_KEY_LENGTH as usize;
         }
 
@@ -340,8 +334,6 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
     let validator_set_length = (input_length - minimum_length) / SINGLE_VALIDATOR_BYTES_LENGTH;
     let validator_set_bytes = input[pos as usize..].to_vec();
     let mut validator_set = Vec::with_capacity(validator_set_length as usize);
-    let mut relayer_address_set = Vec::with_capacity(validator_set_length as usize);
-    let mut relayer_bls_key_set = Vec::with_capacity(validator_set_length as usize);
     for i in 0..validator_set_length {
         let validator = &validator_set_bytes[i as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize
             ..(i + 1) as usize * SINGLE_VALIDATOR_BYTES_LENGTH as usize];
@@ -376,8 +368,6 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
             relayer_address.to_vec(),
         );
         validator_set.push(validator_info);
-        relayer_address_set.push(relayer_address);
-        relayer_bls_key_set.push(relayer_bls_key);
     }
 
     Ok(ConsensusState::new(
@@ -385,8 +375,6 @@ fn decode_consensus_state(input: &Bytes) -> DecodeConsensusStateResult {
         height,
         next_validator_set_hash,
         ValidatorSet::without_proposer(validator_set),
-        relayer_address_set,
-        relayer_bls_key_set,
     ))
 }
 
@@ -469,24 +457,20 @@ mod tests {
                 "0CE856B1DC9CDCF3BF2478291CF02C62AEEB3679889E9866931BF1FB05A10EDA"
             ));
             let mut validators_info = Vec::new();
-            validators_info.push(cometbft::validator::Info::new(
+            let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
+            let relayer_address = Bytes::from(hex!("B32d0723583040F3A16D1380D1e6AA874cD1bdF7"));
+            validators_info.push(cometbft::validator::Info::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "c3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                bls_pub_key.to_vec(),
+                relayer_address.to_vec(),
             ));
             let validator_set = ValidatorSet::without_proposer(validators_info);
-            let bls_pub_key = Bytes::from(hex!("a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
-            let relayer_address = Bytes::from(hex!("B32d0723583040F3A16D1380D1e6AA874cD1bdF7"));
-            let cs = ConsensusState::new(
-                chain_id,
-                height,
-                next_validator_set_hash,
-                validator_set,
-                vec![relayer_address.clone()],
-                vec![bls_pub_key.clone()],
-            );
+
+            let cs = ConsensusState::new(chain_id, height, next_validator_set_hash, validator_set);
 
             let expected_output = Bytes::from(hex!("636861696e5f393030302d31323100000000000000000000000000000000000000000000000000010ce856b1dc9cdcf3bf2478291cf02c62aeeb3679889e9866931bf1fb05a10edac3d9a1082f42ca161402f8668f8e39ec9e30092affd8d3262267ac7e248a959e0000000000002710b32d0723583040f3a16d1380d1e6aa874cd1bdf7a60afe627fd78b19e07e07e19d446009dd53a18c6c8744176a5d851a762bbb51198e7e006f2a6ea7225661a61ecd832d"));
             let cs_bytes = cs.encode().unwrap();
@@ -499,50 +483,35 @@ mod tests {
                 "A5F1AF4874227F1CDBE5240259A365AD86484A4255BFD65E2A0222D733FCDBC3"
             ));
             let mut validators_info = Vec::new();
-            let mut bls_pub_keys = Vec::new();
-            let mut relayer_addresses = Vec::new();
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(cometbft::validator::Info::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "20cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb97"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")).to_vec(),
+                Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")).to_vec(),
             ));
-            bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
-            relayer_addresses.push(Bytes::from(hex!(
-                "d5e63aeee6e6fa122a6a23a6e0fca87701ba1541"
-            )));
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(cometbft::validator::Info::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")).to_vec(),
+                Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")).to_vec(),
             ));
-            bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
-            relayer_addresses.push(Bytes::from(hex!(
-                "6fd1ceb5a48579f322605220d4325bd9ff90d5fa"
-            )));
-            validators_info.push(cometbft::validator::Info::new(
+            validators_info.push(cometbft::validator::Info::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
                 ))
                 .unwrap(),
                 cometbft::vote::Power::from(10000_u32),
+                Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")).to_vec(),
+                Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")).to_vec(),
             ));
-            bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
-            relayer_addresses.push(Bytes::from(hex!(
-                "97376a436bbf54e0f6949b57aa821a90a749920a"
-            )));
             let validator_set = ValidatorSet::without_proposer(validators_info);
-            let cs = ConsensusState::new(
-                chain_id,
-                height,
-                next_validator_set_hash,
-                validator_set,
-                relayer_addresses,
-                bls_pub_keys,
-            );
+            let cs = ConsensusState::new(chain_id, height, next_validator_set_hash, validator_set);
 
             let expected_output = Bytes::from(hex!("636861696e5f393030302d3132310000000000000000000000000000000000000000000000000001a5f1af4874227f1cdbe5240259a365ad86484a4255bfd65e2a0222d733fcdbc320cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb970000000000002710d5e63aeee6e6fa122a6a23a6e0fca87701ba1541aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb8616b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c527000000000000027106fd1ceb5a48579f322605220d4325bd9ff90d5fab31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda000000000000271097376a436bbf54e0f6949b57aa821a90a749920ab32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867"));
             let cs_bytes = cs.encode().unwrap();
@@ -580,8 +549,14 @@ mod tests {
             assert_eq!(cs.height, height);
             assert_eq!(cs.next_validator_set_hash, next_validator_set_hash);
             assert_eq!(cs.validators, validator_set);
-            assert_eq!(cs.relayer_address[0], relayer_address);
-            assert_eq!(cs.relayer_bls_key[0], bls_pub_key);
+            assert_eq!(
+                cs.validators.validators()[0].relayer_address.as_bytes(),
+                relayer_address.to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[0].bls_key.as_bytes(),
+                bls_pub_key.to_vec()
+            );
         }
         {
             let chain_id = "chain_9000-121".to_string();
@@ -642,12 +617,30 @@ mod tests {
             assert_eq!(cs.height, height);
             assert_eq!(cs.next_validator_set_hash, next_validator_set_hash);
             assert_eq!(cs.validators, validator_set);
-            assert_eq!(cs.relayer_address[0], relayer_addresses[0]);
-            assert_eq!(cs.relayer_bls_key[0], bls_pub_keys[0]);
-            assert_eq!(cs.relayer_address[1], relayer_addresses[1]);
-            assert_eq!(cs.relayer_bls_key[1], bls_pub_keys[1]);
-            assert_eq!(cs.relayer_address[2], relayer_addresses[2]);
-            assert_eq!(cs.relayer_bls_key[2], bls_pub_keys[2]);
+            assert_eq!(
+                cs.validators.validators()[0].relayer_address.as_bytes(),
+                relayer_addresses[0].to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[0].bls_key.as_bytes(),
+                bls_pub_keys[0].to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[1].relayer_address.as_bytes(),
+                relayer_addresses[1].to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[1].bls_key.as_bytes(),
+                bls_pub_keys[1].to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[2].relayer_address.as_bytes(),
+                relayer_addresses[2].to_vec()
+            );
+            assert_eq!(
+                cs.validators.validators()[2].bls_key.as_bytes(),
+                bls_pub_keys[2].to_vec()
+            );
         }
     }
 
