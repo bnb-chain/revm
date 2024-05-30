@@ -952,6 +952,86 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FERMAT);
                     TABLE
                 }
+                #[cfg(feature = "bsc")]
+                SpecId::RAMANUJAN => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::RAMANUJAN);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::NIELS => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::NIELS);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::MIRROR_SYNC => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::MIRROR_SYNC);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::BRUNO => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::BRUNO);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::EULER => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::EULER);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::NANO => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::NANO);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::MORAN => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::MORAN);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::GIBBS => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::GIBBS);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::PLANCK => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::PLANCK);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::LUBAN => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::LUBAN);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::PLATO => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::PLATO);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::HERTZ => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::HERTZ);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::HERTZ_FIX => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::HERTZ_FIX);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::KEPLER => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::KEPLER);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::FEYNMAN => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FEYNMAN);
+                    TABLE
+                }
+                #[cfg(feature = "bsc")]
+                SpecId::FEYNMAN_FIX => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FEYNMAN_FIX);
+                    TABLE
+                }
             }
         };
     }
@@ -975,13 +1055,6 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
         MERGE,
         SHANGHAI,
         CANCUN,
-        NANO,
-        MORAN,
-        PLANCK,
-        LUBAN,
-        PLATO,
-        HERTZ,
-        FEYNMAN,
         LATEST,
     )
 }

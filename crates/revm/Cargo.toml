@@ -63,7 +63,7 @@ portable = ["revm-precompile/portable", "revm-interpreter/portable"]
 
 test-utils = []
 
-bsc = ["revm-precompile/bsc"]
+bsc = ["revm-interpreter/bsc", "revm-precompile/bsc"]
 optimism = ["revm-interpreter/optimism", "revm-precompile/optimism"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = [
@@ -110,8 +110,6 @@ opbnb-default-handler = [
     "revm-precompile/opbnb-default-handler",
     "revm-interpreter/opbnb-default-handler",
 ]
-
-bsc = ["revm-precompile/bsc"]
 
 [[example]]
 name = "fork_ref_transact"

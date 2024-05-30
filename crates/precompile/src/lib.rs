@@ -420,7 +420,23 @@ impl PrecompileSpecId {
             }
             BYZANTIUM | CONSTANTINOPLE | PETERSBURG => Self::BYZANTIUM,
             ISTANBUL | MUIR_GLACIER => Self::ISTANBUL,
+            #[cfg(feature = "bsc")]
+            RAMANUJAN | NIELS | MIRROR_SYNC | BRUNO | EULER => Self::ISTANBUL,
+            #[cfg(feature = "bsc")]
+            NANO => Self::NANO,
+            #[cfg(feature = "bsc")]
+            MORAN | GIBBS => Self::MORAN,
+            #[cfg(feature = "bsc")]
+            PLANCK => Self::PLANCK,
+            #[cfg(feature = "bsc")]
+            LUBAN => Self::LUBAN,
+            #[cfg(feature = "bsc")]
+            PLATO => Self::PLATO,
             BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE | SHANGHAI => Self::BERLIN,
+            #[cfg(feature = "bsc")]
+            HERTZ | HERTZ_FIX | KEPLER => Self::HERTZ,
+            #[cfg(feature = "bsc")]
+            FEYNMAN | FEYNMAN_FIX => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
             LATEST => Self::LATEST,
             #[cfg(feature = "optimism")]
@@ -429,14 +445,6 @@ impl PrecompileSpecId {
             ECOTONE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
-            //#[cfg(feature = "bsc")]
-            NANO => Self::NANO,
-            MORAN => Self::MORAN,
-            PLANCK => Self::PLANCK,
-            LUBAN => Self::LUBAN,
-            PLATO => Self::PLATO,
-            HERTZ => Self::HERTZ,
-            FEYNMAN => Self::FEYNMAN,
         }
     }
 }
