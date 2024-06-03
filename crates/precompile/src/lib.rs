@@ -12,9 +12,9 @@ pub mod blake2;
 mod bls;
 #[cfg(feature = "blst")]
 pub mod bls12_381;
-mod bls;
+pub mod bls;
+pub mod cometbft;
 pub mod bn128;
-mod cometbft;
 pub mod hash;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
@@ -69,9 +69,12 @@ impl Precompiles {
             PrecompileSpecId::BYZANTIUM => Self::byzantium(),
             PrecompileSpecId::ISTANBUL => Self::istanbul(),
             PrecompileSpecId::BERLIN => Self::berlin(),
+            #[cfg(feature = "opbnb")]
             PrecompileSpecId::FERMAT => Self::fermat(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::PRAGUE => Self::prague(),
+            #[cfg(feature = "opbnb")]
+            PrecompileSpecId::HABER => Self::haber(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
     }
@@ -142,6 +145,7 @@ impl Precompiles {
     /// Returns precompiles for Fermat spec.
     ///
     /// effectively making this the same as Berlin.
+    #[cfg(feature = "opbnb")]
     pub fn fermat() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
@@ -198,6 +202,26 @@ impl Precompiles {
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend(bls12_381::precompiles());
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
+    /// Returns precompiles for Haber spec.
+    ///
+    /// effectively making this the same as Berlin.
+    #[cfg(all(feature = "opbnb", feature = "secp256r1"))]
+    pub fn haber() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::cancun().clone();
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    secp256r1::P256VERIFY,
+                ]);
                 precompiles
             };
 
@@ -282,6 +306,7 @@ pub enum PrecompileSpecId {
     FERMAT,
     CANCUN,
     PRAGUE,
+    HABER,
     LATEST,
 }
 
@@ -305,6 +330,8 @@ impl PrecompileSpecId {
             ECOTONE | FJORD => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
+            #[cfg(feature = "opbnb")]
+            HABER => Self::HABER,
         }
     }
 }

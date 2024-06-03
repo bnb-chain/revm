@@ -66,6 +66,7 @@ pub enum SpecId {
     ECOTONE = 22,
     FJORD = 23,
     PRAGUE = 24,
+    HABER = 25,
     #[default]
     LATEST = u8::MAX,
 }
@@ -120,6 +121,8 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fjord" => SpecId::FJORD,
+            #[cfg(feature = "opbnb")]
+            "Haber" => SpecId::HABER,
             _ => Self::LATEST,
         }
     }
@@ -159,6 +162,8 @@ impl From<SpecId> for &'static str {
             SpecId::ECOTONE => "Ecotone",
             #[cfg(feature = "optimism")]
             SpecId::FJORD => "Fjord",
+            #[cfg(feature = "opbnb")]
+            SpecId::HABER => "Haber",
             SpecId::LATEST => "Latest",
         }
     }
@@ -223,6 +228,8 @@ spec!(FERMAT, FermatSpec);
 spec!(FJORD, FjordSpec);
 #[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
+#[cfg(feature = "opbnb")]
+spec!(HABER, HaberSpec);
 
 #[cfg(not(feature = "optimism"))]
 #[macro_export]
@@ -380,6 +387,11 @@ macro_rules! spec_to_generic {
             #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
                 use $crate::FermatSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "opbnb")]
+            $crate::SpecId::HABER => {
+                use $crate::HaberSpec as SPEC;
                 $e
             }
         }
