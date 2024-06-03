@@ -9,13 +9,13 @@
 extern crate alloc as std;
 
 pub mod blake2;
-#[cfg(feature = "blst")]
-pub mod bls12_381;
 #[cfg(feature = "opbnb")]
 pub mod bls;
+#[cfg(feature = "blst")]
+pub mod bls12_381;
+pub mod bn128;
 #[cfg(feature = "opbnb")]
 pub mod cometbft;
-pub mod bn128;
 pub mod hash;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
@@ -220,9 +220,7 @@ impl Precompiles {
             let precompiles = Self::cancun().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
-                precompiles.extend([
-                    secp256r1::P256VERIFY,
-                ]);
+                precompiles.extend([secp256r1::P256VERIFY]);
                 precompiles
             };
 
