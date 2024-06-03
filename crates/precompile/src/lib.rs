@@ -20,6 +20,8 @@ pub mod identity;
 pub mod kzg_point_evaluation;
 pub mod modexp;
 pub mod secp256k1;
+#[cfg(feature = "secp256r1")]
+pub mod secp256r1;
 pub mod utilities;
 
 use core::hash::Hash;
@@ -68,6 +70,7 @@ impl Precompiles {
             PrecompileSpecId::BERLIN => Self::berlin(),
             PrecompileSpecId::FERMAT => Self::fermat(),
             PrecompileSpecId::CANCUN => Self::cancun(),
+            PrecompileSpecId::PRAGUE => Self::prague(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
     }
@@ -183,6 +186,24 @@ impl Precompiles {
         })
     }
 
+    /// Returns precompiles for Prague spec.
+    pub fn prague() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::cancun().clone();
+
+            // Don't include BLS12-381 precompiles in no_std builds.
+            #[cfg(feature = "blst")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend(bls12_381::precompiles());
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
     /// Returns the precompiles for the latest spec.
     pub fn latest() -> &'static Self {
         Self::cancun()
@@ -259,6 +280,7 @@ pub enum PrecompileSpecId {
     BERLIN,
     FERMAT,
     CANCUN,
+    PRAGUE,
     LATEST,
 }
 
@@ -274,13 +296,16 @@ impl PrecompileSpecId {
             ISTANBUL | MUIR_GLACIER => Self::ISTANBUL,
             BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE | SHANGHAI => Self::BERLIN,
             CANCUN => Self::CANCUN,
+            PRAGUE => Self::PRAGUE,
             LATEST => Self::LATEST,
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
-            ECOTONE => Self::CANCUN,
+            ECOTONE | FJORD => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
+            #[cfg(feature = "opbnb")]
+            HABER => Self::CANCUN,
         }
     }
 }
