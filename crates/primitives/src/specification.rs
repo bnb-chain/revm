@@ -375,12 +375,9 @@ macro_rules! spec_to_generic {
                 use $crate::EcotoneSpec as SPEC;
                 $e
             }
-            #[cfg(feature = "opbnb")]
-            $crate::SpecId::FERMAT => {
-                use $crate::FermatSpec as SPEC;
-            }
             $crate::SpecId::FJORD => {
                 use $crate::FjordSpec as SPEC;
+                $e
             }
             #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
