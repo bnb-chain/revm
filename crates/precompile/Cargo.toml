@@ -110,14 +110,6 @@ negate-opbnb-default-handler = [
 ]
 # Enables the BLS12-381 precompiles.
 blst = ["dep:blst"]
-opbnb = ["revm-primitives/opbnb"]
-opbnb-default-handler = [
-    "opbnb",
-    "revm-primitives/opbnb-default-handler",
-]
-negate-opbnb-default-handler = [
-    "revm-primitives/negate-opbnb-default-handler",
-]
 
 [[bench]]
 name = "bench"

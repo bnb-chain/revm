@@ -222,8 +222,6 @@ spec!(REGOLITH, RegolithSpec);
 spec!(CANYON, CanyonSpec);
 #[cfg(feature = "optimism")]
 spec!(ECOTONE, EcotoneSpec);
-#[cfg(feature = "opbnb")]
-spec!(FERMAT, FermatSpec);
 #[cfg(feature = "optimism")]
 spec!(FJORD, FjordSpec);
 #[cfg(feature = "opbnb")]

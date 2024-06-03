@@ -9,10 +9,11 @@
 extern crate alloc as std;
 
 pub mod blake2;
-mod bls;
 #[cfg(feature = "blst")]
 pub mod bls12_381;
+#[cfg(feature = "opbnb")]
 pub mod bls;
+#[cfg(feature = "opbnb")]
 pub mod cometbft;
 pub mod bn128;
 pub mod hash;
