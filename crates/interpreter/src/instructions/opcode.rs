@@ -947,9 +947,19 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::ECOTONE);
                     TABLE
                 }
+                #[cfg(feature = "optimism")]
+                SpecId::FJORD => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FJORD);
+                    TABLE
+                }
                 #[cfg(feature = "opbnb")]
                 SpecId::FERMAT => {
                     const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::FERMAT);
+                    TABLE
+                }
+                #[cfg(feature = "opbnb")]
+                SpecId::HABER => {
+                    const TABLE: &[OpInfo;256] = &make_gas_table(SpecId::HABER);
                     TABLE
                 }
             }
@@ -975,6 +985,7 @@ pub const fn spec_opcode_gas(spec_id: SpecId) -> &'static [OpInfo; 256] {
         MERGE,
         SHANGHAI,
         CANCUN,
+        PRAGUE,
         LATEST,
     )
 }

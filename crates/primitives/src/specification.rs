@@ -27,7 +27,8 @@ pub enum SpecId {
     GRAY_GLACIER = 14,    // Gray Glacier	        15050000
     MERGE = 15,           // Paris/Merge	        15537394 (TTD: 58750000000000000000000)
     SHANGHAI = 16,        // Shanghai	            17034870 (TS: 1681338455)
-    CANCUN = 17,          // Cancun	                TBD
+    CANCUN = 17,          // Cancun                 19426587 (Timestamp: 1710338135)
+    PRAGUE = 18,          // Praque                 TBD
     #[default]
     LATEST = u8::MAX,
 }
@@ -65,6 +66,7 @@ pub enum SpecId {
     ECOTONE = 22,
     FJORD = 23,
     PRAGUE = 24,
+    HABER = 25,
     #[default]
     LATEST = u8::MAX,
 }
@@ -114,6 +116,8 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fjord" => SpecId::FJORD,
+            #[cfg(feature = "opbnb")]
+            "Haber" => SpecId::HABER,
             _ => Self::LATEST,
         }
     }
@@ -140,12 +144,15 @@ impl From<SpecId> for &'static str {
             SpecId::MERGE => "Merge",
             SpecId::SHANGHAI => "Shanghai",
             SpecId::CANCUN => "Cancun",
+            SpecId::PRAGUE => "Prague",
             #[cfg(feature = "optimism")]
             SpecId::BEDROCK => "Bedrock",
             #[cfg(feature = "optimism")]
             SpecId::REGOLITH => "Regolith",
             #[cfg(feature = "opbnb")]
             SpecId::FERMAT => "Fermat",
+            #[cfg(feature = "opbnb")]
+            SpecId::HABER => "Haber",
             #[cfg(feature = "optimism")]
             SpecId::CANYON => "Canyon",
             #[cfg(feature = "optimism")]
@@ -197,6 +204,7 @@ spec!(LONDON, LondonSpec);
 spec!(MERGE, MergeSpec);
 spec!(SHANGHAI, ShanghaiSpec);
 spec!(CANCUN, CancunSpec);
+spec!(PRAGUE, PragueSpec);
 
 spec!(LATEST, LatestSpec);
 
@@ -211,6 +219,8 @@ spec!(CANYON, CanyonSpec);
 spec!(ECOTONE, EcotoneSpec);
 #[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
+#[cfg(feature = "opbnb")]
+spec!(HABER, HaberSpec);
 #[cfg(feature = "optimism")]
 spec!(FJORD, FjordSpec);
 
@@ -273,6 +283,10 @@ macro_rules! spec_to_generic {
                 use $crate::LatestSpec as SPEC;
                 $e
             }
+            $crate::SpecId::PRAGUE => {
+                use $crate::PragueSpec as SPEC;
+                $e
+            }
             #[cfg(feature = "optimism")]
             $crate::SpecId::BEDROCK => {
                 use $crate::BedrockSpec as SPEC;
@@ -293,13 +307,19 @@ macro_rules! spec_to_generic {
                 use $crate::EcotoneSpec as SPEC;
                 $e
             }
+            #[cfg(feature = "optimism")]
+            $crate::SpecId::FJORD => {
+                use $crate::FjordSpec as SPEC;
+                $e
+            }
             #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
                 use $crate::FermatSpec as SPEC;
                 $e
             }
-            $crate::SpecId::FJORD => {
-                use $crate::FjordSpec as SPEC;
+            #[cfg(feature = "opbnb")]
+            $crate::SpecId::HABER => {
+                use $crate::HaberSpec as SPEC;
                 $e
             }
         }
