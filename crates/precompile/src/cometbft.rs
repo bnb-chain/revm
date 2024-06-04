@@ -18,7 +18,7 @@ use std::borrow::ToOwned;
 use std::string::String;
 use std::vec::Vec;
 
-pub const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
+pub(crate) const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
     Precompile::Standard(cometbft_light_block_validation_run),
 );
