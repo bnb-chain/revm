@@ -46,6 +46,13 @@ cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.g
 cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
+tendermint = { git = "https://github.com/forcodedancing/tendermint-rs-parlia", rev = "10cfd14bac4cd4f1180a6670ea44edabfeda2519", features = ["secp256k1"] }
+parity-bytes = { version = "0.1.2", default-features = false }
+alloy-rlp = { version = "0.3", default-features = false, features = [
+    "arrayvec",
+    "derive",
+] }
+alloy-primitives = {version = "0.7.0"}
 
 # p256verify precompile
 p256 = { version = "0.13.2", optional = true,  default-features = false, features = ["ecdsa"] }
@@ -76,6 +83,7 @@ std = [
 hashbrown = ["revm-primitives/hashbrown"]
 asm-keccak = ["revm-primitives/asm-keccak"]
 
+bsc = ["revm-primitives/bsc"]
 optimism = ["revm-primitives/optimism", "secp256r1"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = [
