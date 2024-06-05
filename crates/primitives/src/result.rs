@@ -1,4 +1,4 @@
-use crate::{Address, Bytes, Log, State, U256};
+use crate::{Address, Bytes, EvmState, Log, U256};
 use core::fmt;
 use std::{boxed::Box, string::String, vec::Vec};
 
@@ -14,7 +14,7 @@ pub struct ResultAndState {
     /// Status of execution
     pub result: ExecutionResult,
     /// State that got updated
-    pub state: State,
+    pub state: EvmState,
 }
 
 /// Result of a transaction execution.
@@ -242,9 +242,14 @@ pub enum InvalidTransaction {
     /// `to` must be present
     BlobCreateTransaction,
     /// Transaction has more then [`crate::MAX_BLOB_NUMBER_PER_BLOCK`] blobs
-    TooManyBlobs,
+    TooManyBlobs {
+        max: usize,
+        have: usize,
+    },
     /// Blob transaction contains a versioned hash with an incorrect version
     BlobVersionNotSupported,
+    /// EOF crate should have `to` address
+    EofCrateShouldHaveToAddress,
     /// System transactions are not supported post-regolith hardfork.
     ///
     /// Before the Regolith hardfork, there was a special field in the `Deposit` transaction
@@ -331,8 +336,11 @@ impl fmt::Display for InvalidTransaction {
             }
             Self::EmptyBlobs => write!(f, "empty blobs"),
             Self::BlobCreateTransaction => write!(f, "blob create transaction"),
-            Self::TooManyBlobs => write!(f, "too many blobs"),
+            Self::TooManyBlobs { max, have } => {
+                write!(f, "too many blobs, have {have}, max {max}")
+            }
             Self::BlobVersionNotSupported => write!(f, "blob version not supported"),
+            Self::EofCrateShouldHaveToAddress => write!(f, "EOF crate should have `to` address"),
             #[cfg(feature = "optimism")]
             Self::DepositSystemTxPostRegolith => {
                 write!(

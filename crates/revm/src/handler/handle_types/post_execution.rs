@@ -35,6 +35,10 @@ pub type EndHandle<'a, EXT, DB> = Arc<
         + 'a,
 >;
 
+/// Clear handle, doesn't have output, its purpose is to clear the
+/// context. It will be always called even on failed validation.
+pub type ClearHandle<'a, EXT, DB> = Arc<dyn Fn(&mut Context<EXT, DB>) + 'a>;
+
 /// Handles related to post execution after the stack loop is finished.
 pub struct PostExecutionHandler<'a, EXT, DB: Database> {
     /// Reimburse the caller with ethereum it didn't spent.
@@ -47,6 +51,9 @@ pub struct PostExecutionHandler<'a, EXT, DB: Database> {
     /// End handle in comparison to output handle will be called every time after execution.
     /// Output in case of error will not be called.
     pub end: EndHandle<'a, EXT, DB>,
+    /// Clear handle will be called always. In comparison to end that
+    /// is called only on execution end, clear handle is called even if validation fails.
+    pub clear: ClearHandle<'a, EXT, DB>,
 }
 
 impl<'a, EXT: 'a, DB: Database + 'a> PostExecutionHandler<'a, EXT, DB> {
@@ -57,6 +64,7 @@ impl<'a, EXT: 'a, DB: Database + 'a> PostExecutionHandler<'a, EXT, DB> {
             reward_beneficiary: Arc::new(mainnet::reward_beneficiary::<SPEC, EXT, DB>),
             output: Arc::new(mainnet::output::<EXT, DB>),
             end: Arc::new(mainnet::end::<EXT, DB>),
+            clear: Arc::new(mainnet::clear::<EXT, DB>),
         }
     }
 }
@@ -95,5 +103,10 @@ impl<'a, EXT, DB: Database> PostExecutionHandler<'a, EXT, DB> {
         end_output: Result<ResultAndState, EVMError<DB::Error>>,
     ) -> Result<ResultAndState, EVMError<DB::Error>> {
         (self.end)(context, end_output)
+    }
+
+    /// Clean handler.
+    pub fn clear(&self, context: &mut Context<EXT, DB>) {
+        (self.clear)(context)
     }
 }
