@@ -181,7 +181,7 @@ impl Precompiles {
     pub fn nano() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::berlin().clone();
+            let precompiles = Self::istanbul().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
@@ -199,7 +199,7 @@ impl Precompiles {
     pub fn moran() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::berlin().clone();
+            let precompiles = Self::istanbul().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
@@ -217,7 +217,7 @@ impl Precompiles {
     pub fn planck() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::berlin().clone();
+            let precompiles = Self::istanbul().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
                 precompiles.extend([
