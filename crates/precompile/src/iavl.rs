@@ -37,12 +37,10 @@ fn iavl_proof_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult 
     return iavl_proof_validation_run_inner(input, gas_limit, false, false, false);
 }
 
-
 /// Run Iavl proof validation with Nano hardfork.
 fn iavl_proof_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> PrecompileResult {
     return Err(PrecompileError::other("suspended"));
 }
-
 
 /// Run Iavl proof validation with Moran hardfork.
 fn iavl_proof_validation_run_moran(input: &Bytes, gas_limit: u64) -> PrecompileResult {

@@ -180,7 +180,12 @@ impl ConsensusState {
         next_validator_set_hash: Bytes,
         validators: ValidatorSet,
     ) -> Self {
-        Self { chain_id, height, next_validator_set_hash, validators }
+        Self {
+            chain_id,
+            height,
+            next_validator_set_hash,
+            validators,
+        }
     }
 
     fn apply_light_block(&mut self, light_block: &LightBlock) -> Result<bool, Error> {
@@ -246,7 +251,12 @@ impl ConsensusState {
             .as_bytes());
         self.height = light_block.height().value();
         self.next_validator_set_hash = Bytes::from(
-            light_block.signed_header.header().next_validators_hash.as_bytes().to_vec(),
+            light_block
+                .signed_header
+                .header()
+                .next_validators_hash
+                .as_bytes()
+                .to_vec(),
         );
         self.validators = light_block.validators.clone();
 
@@ -563,7 +573,10 @@ mod tests {
                 cs.validators.validators()[0].relayer_address.as_bytes(),
                 relayer_address.to_vec()
             );
-            assert_eq!(cs.validators.validators()[0].bls_key.as_bytes(), bls_pub_key.to_vec());
+            assert_eq!(
+                cs.validators.validators()[0].bls_key.as_bytes(),
+                bls_pub_key.to_vec()
+            );
         }
         {
             let chain_id = "chain_9000-121".to_string();
@@ -584,7 +597,9 @@ mod tests {
                 Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb861")));
-            relayer_addresses.push(Bytes::from(hex!("d5e63aeee6e6fa122a6a23a6e0fca87701ba1541")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "d5e63aeee6e6fa122a6a23a6e0fca87701ba1541"
+            )));
             validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "6b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c5270"
@@ -595,7 +610,9 @@ mod tests {
                 Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451")));
-            relayer_addresses.push(Bytes::from(hex!("6fd1ceb5a48579f322605220d4325bd9ff90d5fa")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "6fd1ceb5a48579f322605220d4325bd9ff90d5fa"
+            )));
             validators_info.push(Validator::new_with_bls_and_relayer(
                 PublicKey::from_raw_ed25519(&hex!(
                     "919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda"
@@ -606,7 +623,9 @@ mod tests {
                 Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")).to_vec(),
             ));
             bls_pub_keys.push(Bytes::from(hex!("b32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867")));
-            relayer_addresses.push(Bytes::from(hex!("97376a436bbf54e0f6949b57aa821a90a749920a")));
+            relayer_addresses.push(Bytes::from(hex!(
+                "97376a436bbf54e0f6949b57aa821a90a749920a"
+            )));
             let validator_set = ValidatorSet::without_proposer(validators_info);
             let cs_bytes = Bytes::from(hex!("636861696e5f393030302d3132310000000000000000000000000000000000000000000000000001a5f1af4874227f1cdbe5240259a365ad86484a4255bfd65e2a0222d733fcdbc320cc466ee9412ddd49e0fff04cdb41bade2b7622f08b6bdacac94d4de03bdb970000000000002710d5e63aeee6e6fa122a6a23a6e0fca87701ba1541aa2d28cbcd1ea3a63479f6fb260a3d755853e6a78cfa6252584fee97b2ec84a9d572ee4a5d3bc1558bb98a4b370fb8616b0b523ee91ad18a63d63f21e0c40a83ef15963f4260574ca5159fd90a1c527000000000000027106fd1ceb5a48579f322605220d4325bd9ff90d5fab31e74a881fc78681e3dfa440978d2b8be0708a1cbbca2c660866216975fdaf0e9038d9b7ccbf9731f43956dba7f2451919606ae20bf5d248ee353821754bcdb456fd3950618fda3e32d3d0fb990eeda000000000000271097376a436bbf54e0f6949b57aa821a90a749920ab32979580ea04984a2be033599c20c7a0c9a8d121b57f94ee05f5eda5b36c38f6e354c89328b92cdd1de33b64d3a0867"));
             let cs = match decode_consensus_state(&cs_bytes) {

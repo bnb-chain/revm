@@ -82,35 +82,35 @@ pub enum SpecId {
 pub enum SpecId {
     FRONTIER = 0,
     FRONTIER_THAWING = 1,
-    HOMESTEAD = 2, // Homestead                                0
-    TANGERINE = 3, // Tangerine Whistle(EIP150)                0
-    SPURIOUS_DRAGON = 4, // Spurious Dragon(EIP155, EIP158)    0
-    BYZANTIUM = 5, // Byzantium                                0
-    CONSTANTINOPLE = 6, // Constantinople                      0
-    PETERSBURG = 7, // Petersburg                              0
-    ISTANBUL = 8,  // Istanbul                                 0
-    MUIR_GLACIER = 9, // Muir Glacier                          0
-    RAMANUJAN = 10, // Ramanujan                               0
-    NIELS = 11,     // Niels                                   0
-    MIRROR_SYNC = 12, // Mirror Sync                           5184000
-    BRUNO = 13,    // Bruno                                    13082000
-    EULER = 14,    // Euler                                    18907621
-    NANO = 15,     // Nano                                     21962149
-    MORAN = 16,   // Moran                                     22107423
-    GIBBS = 17,   // Gibbs                                     23846001
-    PLANCK = 18,  // Planck                                    27281024
-    LUBAN = 19,   // Luban                                     29020050
-    PLATO = 20,   // Plato                                     30720096
-    BERLIN = 21,  // Berlin                                    31302048
-    LONDON = 22,  // London                                    31302048
-    HERTZ = 23,   // Hertz                                     31302048
-    HERTZ_FIX = 24, // HertzFix                                34140700
-    SHANGHAI = 25, // Shanghai                                 timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    KEPLER = 26,  // Kepler                                    timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    FEYNMAN = 27, // Feynman                                   timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    FEYNMAN_FIX = 28, // FeynmanFix                            timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    CANCUN = 29,  // Cancun                                    timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
-    HABER = 30, // Haber                                       TBD
+    HOMESTEAD = 2,       // Homestead                            0
+    TANGERINE = 3,       // Tangerine Whistle(EIP150)            0
+    SPURIOUS_DRAGON = 4, // Spurious Dragon(EIP155, EIP158)      0
+    BYZANTIUM = 5,       // Byzantium                            0
+    CONSTANTINOPLE = 6,  // Constantinople                       0
+    PETERSBURG = 7,      // Petersburg                           0
+    ISTANBUL = 8,        // Istanbul                             0
+    MUIR_GLACIER = 9,    // Muir Glacier                         0
+    RAMANUJAN = 10,      // Ramanujan                            0
+    NIELS = 11,          // Niels                                0
+    MIRROR_SYNC = 12,    // Mirror Sync                          5184000
+    BRUNO = 13,          // Bruno                                13082000
+    EULER = 14,          // Euler                                18907621
+    NANO = 15,           // Nano                                 21962149
+    MORAN = 16,          // Moran                                22107423
+    GIBBS = 17,          // Gibbs                                23846001
+    PLANCK = 18,         // Planck                               27281024
+    LUBAN = 19,          // Luban                                29020050
+    PLATO = 20,          // Plato                                30720096
+    BERLIN = 21,         // Berlin                               31302048
+    LONDON = 22,         // London                               31302048
+    HERTZ = 23,          // Hertz                                31302048
+    HERTZ_FIX = 24,      // HertzFix                             34140700
+    SHANGHAI = 25,       // Shanghai                             timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    KEPLER = 26,         // Kepler                               timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
+    FEYNMAN = 27,        // Feynman                              timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    FEYNMAN_FIX = 28,    // FeynmanFix                           timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
+    CANCUN = 29,         // Cancun                               timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
+    HABER = 30,          // Haber                                TBD
 
     // TODO: or u8::MAX - n?
     /// Not enabled in bsc
@@ -399,9 +399,9 @@ macro_rules! spec_to_generic {
                 use $crate::BerlinSpec as SPEC;
                 $e
             }
-            $crate::SpecId::LONDON |
-            $crate::SpecId::ARROW_GLACIER |
-            $crate::SpecId::GRAY_GLACIER => {
+            $crate::SpecId::LONDON
+            | $crate::SpecId::ARROW_GLACIER
+            | $crate::SpecId::GRAY_GLACIER => {
                 use $crate::LondonSpec as SPEC;
                 $e
             }
@@ -466,9 +466,9 @@ macro_rules! spec_to_generic {
                 use $crate::BerlinSpec as SPEC;
                 $e
             }
-            $crate::SpecId::LONDON |
-            $crate::SpecId::ARROW_GLACIER |
-            $crate::SpecId::GRAY_GLACIER => {
+            $crate::SpecId::LONDON
+            | $crate::SpecId::ARROW_GLACIER
+            | $crate::SpecId::GRAY_GLACIER => {
                 use $crate::LondonSpec as SPEC;
                 $e
             }
@@ -555,13 +555,13 @@ macro_rules! spec_to_generic {
                 use $crate::PetersburgSpec as SPEC;
                 $e
             }
-            $crate::SpecId::ISTANBUL |
-            $crate::SpecId::MUIR_GLACIER |
-            $crate::SpecId::RAMANUJAN |
-            $crate::SpecId::NIELS |
-            $crate::SpecId::MIRROR_SYNC |
-            $crate::SpecId::BRUNO |
-            $crate::SpecId::EULER => {
+            $crate::SpecId::ISTANBUL
+            | $crate::SpecId::MUIR_GLACIER
+            | $crate::SpecId::RAMANUJAN
+            | $crate::SpecId::NIELS
+            | $crate::SpecId::MIRROR_SYNC
+            | $crate::SpecId::BRUNO
+            | $crate::SpecId::EULER => {
                 use $crate::IstanbulSpec as SPEC;
                 $e
             }
@@ -589,9 +589,9 @@ macro_rules! spec_to_generic {
                 use $crate::BerlinSpec as SPEC;
                 $e
             }
-            $crate::SpecId::LONDON |
-            $crate::SpecId::ARROW_GLACIER |
-            $crate::SpecId::GRAY_GLACIER => {
+            $crate::SpecId::LONDON
+            | $crate::SpecId::ARROW_GLACIER
+            | $crate::SpecId::GRAY_GLACIER => {
                 use $crate::LondonSpec as SPEC;
                 $e
             }
