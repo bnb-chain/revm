@@ -461,7 +461,6 @@ impl PrecompileSpecId {
             FEYNMAN | FEYNMAN_FIX | HABER => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
             PRAGUE => Self::PRAGUE,
-            LATEST => Self::LATEST,
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
@@ -470,8 +469,7 @@ impl PrecompileSpecId {
             FERMAT => Self::FERMAT,
             #[cfg(feature = "opbnb")]
             HABER => Self::CANCUN,
-            #[cfg(feature = "opbnb")]
-            FERMAT => Self::FERMAT,
+            LATEST => Self::LATEST,
         }
     }
 }

@@ -1,5 +1,8 @@
 #![allow(non_camel_case_types)]
 
+#[cfg(all(feature = "optimism", feature = "bsc"))]
+compile_error!("Features 'optimism' and 'bsc' cannot be enabled together.");
+
 pub use SpecId::*;
 
 /// Specification IDs and their activation block.
@@ -142,7 +145,6 @@ impl SpecId {
 }
 
 impl From<&str> for SpecId {
-    #[cfg(not(feature = "bsc"))]
     fn from(name: &str) -> Self {
         match name {
             "Frontier" => Self::FRONTIER,
@@ -172,44 +174,39 @@ impl From<&str> for SpecId {
             "Ecotone" => SpecId::ECOTONE,
             #[cfg(feature = "optimism")]
             "Fjord" => SpecId::FJORD,
-            #[cfg(any(feature = "opbnb"))]
-            "Haber" => SpecId::HABER,
-            _ => Self::LATEST,
-        }
-    }
-
-    #[cfg(feature = "bsc")]
-    fn from(name: &str) -> Self {
-        match name {
-            "Frontier" => Self::FRONTIER,
-            "Homestead" => Self::HOMESTEAD,
-            "Tangerine" => Self::TANGERINE,
-            "Spurious" => Self::SPURIOUS_DRAGON,
-            "Byzantium" => Self::BYZANTIUM,
-            "Constantinople" => Self::CONSTANTINOPLE,
-            "Petersburg" => Self::PETERSBURG,
-            "Istanbul" => Self::ISTANBUL,
-            "MuirGlacier" => Self::MUIR_GLACIER,
-            "Berlin" => Self::BERLIN,
-            "London" => Self::LONDON,
-            "Shanghai" => Self::SHANGHAI,
-            "Cancun" => Self::CANCUN,
+            #[cfg(feature = "bsc")]
             "Ramanujan" => SpecId::RAMANUJAN,
+            #[cfg(feature = "bsc")]
             "Niels" => SpecId::NIELS,
+            #[cfg(feature = "bsc")]
             "MirrorSync" => SpecId::MIRROR_SYNC,
+            #[cfg(feature = "bsc")]
             "Bruno" => SpecId::BRUNO,
+            #[cfg(feature = "bsc")]
             "Euler" => SpecId::EULER,
+            #[cfg(feature = "bsc")]
             "Nano" => SpecId::NANO,
+            #[cfg(feature = "bsc")]
             "Moran" => SpecId::MORAN,
+            #[cfg(feature = "bsc")]
             "Gibbs" => SpecId::GIBBS,
+            #[cfg(feature = "bsc")]
             "Planck" => SpecId::PLANCK,
+            #[cfg(feature = "bsc")]
             "Luban" => SpecId::LUBAN,
+            #[cfg(feature = "bsc")]
             "Plato" => SpecId::PLATO,
+            #[cfg(feature = "bsc")]
             "Hertz" => SpecId::HERTZ,
+            #[cfg(feature = "bsc")]
             "HertzFix" => SpecId::HERTZ_FIX,
+            #[cfg(feature = "bsc")]
             "Kepler" => SpecId::KEPLER,
+            #[cfg(feature = "bsc")]
             "Feynman" => SpecId::FEYNMAN,
+            #[cfg(feature = "bsc")]
             "FeynmanFix" => SpecId::FEYNMAN_FIX,
+            #[cfg(any(feature = "opbnb", feature = "bsc"))]
             "Haber" => SpecId::HABER,
             _ => Self::LATEST,
         }
@@ -217,7 +214,6 @@ impl From<&str> for SpecId {
 }
 
 impl From<SpecId> for &'static str {
-    #[cfg(not(feature = "bsc"))]
     fn from(spec_id: SpecId) -> Self {
         match spec_id {
             SpecId::FRONTIER => "Frontier",
@@ -251,48 +247,41 @@ impl From<SpecId> for &'static str {
             SpecId::ECOTONE => "Ecotone",
             #[cfg(feature = "optimism")]
             SpecId::FJORD => "Fjord",
-            #[cfg(feature = "opbnb")]
-            SpecId::HABER => "Haber",
-            SpecId::LATEST => "Latest",
-        }
-    }
-
-    #[cfg(feature = "bsc")]
-    fn from(spec_id: SpecId) -> Self {
-        match spec_id {
-            SpecId::FRONTIER => "Frontier",
-            SpecId::FRONTIER_THAWING => "Frontier Thawing",
-            SpecId::HOMESTEAD => "Homestead",
-            SpecId::TANGERINE => "Tangerine",
-            SpecId::SPURIOUS_DRAGON => "Spurious",
-            SpecId::BYZANTIUM => "Byzantium",
-            SpecId::CONSTANTINOPLE => "Constantinople",
-            SpecId::PETERSBURG => "Petersburg",
-            SpecId::ISTANBUL => "Istanbul",
-            SpecId::MUIR_GLACIER => "MuirGlacier",
-            SpecId::BERLIN => "Berlin",
-            SpecId::LONDON => "London",
-            SpecId::SHANGHAI => "Shanghai",
-            SpecId::CANCUN => "Cancun",
+            #[cfg(feature = "bsc")]
             SpecId::RAMANUJAN => "Ramanujan",
+            #[cfg(feature = "bsc")]
             SpecId::NIELS => "Niels",
+            #[cfg(feature = "bsc")]
             SpecId::MIRROR_SYNC => "MirrorSync",
+            #[cfg(feature = "bsc")]
             SpecId::BRUNO => "Bruno",
+            #[cfg(feature = "bsc")]
             SpecId::EULER => "Euler",
+            #[cfg(feature = "bsc")]
             SpecId::NANO => "Nano",
+            #[cfg(feature = "bsc")]
             SpecId::MORAN => "Moran",
+            #[cfg(feature = "bsc")]
             SpecId::GIBBS => "Gibbs",
+            #[cfg(feature = "bsc")]
             SpecId::PLANCK => "Planck",
+            #[cfg(feature = "bsc")]
             SpecId::LUBAN => "Luban",
+            #[cfg(feature = "bsc")]
             SpecId::PLATO => "Plato",
+            #[cfg(feature = "bsc")]
             SpecId::HERTZ => "Hertz",
+            #[cfg(feature = "bsc")]
             SpecId::HERTZ_FIX => "HertzFix",
+            #[cfg(feature = "bsc")]
             SpecId::KEPLER => "Kepler",
+            #[cfg(feature = "bsc")]
             SpecId::FEYNMAN => "Feynman",
+            #[cfg(feature = "bsc")]
             SpecId::FEYNMAN_FIX => "FeynmanFix",
+            #[cfg(any(feature = "opbnb", feature = "bsc"))]
             SpecId::HABER => "Haber",
             SpecId::LATEST => "Latest",
-            _ => "Unknown",
         }
     }
 }
@@ -342,23 +331,10 @@ spec!(PRAGUE, PragueSpec);
 spec!(LATEST, LatestSpec);
 
 // BSC Hardforks
-// TODO: some of these hardforks may have no EVM spec change
-#[cfg(feature = "bsc")]
-spec!(RAMANUJAN, RamanujanSpec);
-#[cfg(feature = "bsc")]
-spec!(NIELS, NielsSpec);
-#[cfg(feature = "bsc")]
-spec!(MIRROR_SYNC, MirrorSyncSpec);
-#[cfg(feature = "bsc")]
-spec!(BRUNO, BrunoSpec);
-#[cfg(feature = "bsc")]
-spec!(EULER, EulerSpec);
 #[cfg(feature = "bsc")]
 spec!(NANO, NanoSpec);
 #[cfg(feature = "bsc")]
 spec!(MORAN, MoranSpec);
-#[cfg(feature = "bsc")]
-spec!(GIBBS, GibbsSpec);
 #[cfg(feature = "bsc")]
 spec!(PLANCK, PlanckSpec);
 #[cfg(feature = "bsc")]
@@ -368,13 +344,7 @@ spec!(PLATO, PlatoSpec);
 #[cfg(feature = "bsc")]
 spec!(HERTZ, HertzSpec);
 #[cfg(feature = "bsc")]
-spec!(HERTZ_FIX, HertzFixSpec);
-#[cfg(feature = "bsc")]
-spec!(KEPLER, KeplerSpec);
-#[cfg(feature = "bsc")]
 spec!(FEYNMAN, FeynmanSpec);
-#[cfg(feature = "bsc")]
-spec!(FEYNMAN_FIX, FeynmanFixSpec);
 #[cfg(any(feature = "bsc", feature = "opbnb"))]
 spec!(HABER, HaberSpec);
 
@@ -585,8 +555,34 @@ macro_rules! spec_to_generic {
                 use $crate::PetersburgSpec as SPEC;
                 $e
             }
-            $crate::SpecId::ISTANBUL | $crate::SpecId::MUIR_GLACIER => {
+            $crate::SpecId::ISTANBUL |
+            $crate::SpecId::MUIR_GLACIER |
+            $crate::SpecId::RAMANUJAN |
+            $crate::SpecId::NIELS |
+            $crate::SpecId::MIRROR_SYNC |
+            $crate::SpecId::BRUNO |
+            $crate::SpecId::EULER => {
                 use $crate::IstanbulSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::NANO => {
+                use $crate::NanoSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::MORAN | $crate::SpecId::GIBBS => {
+                use $crate::MoranSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLANCK => {
+                use $crate::PlanckSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::LUBAN => {
+                use $crate::LubanSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::PLATO => {
+                use $crate::PlatoSpec as SPEC;
                 $e
             }
             $crate::SpecId::BERLIN => {
@@ -607,84 +603,28 @@ macro_rules! spec_to_generic {
                 use $crate::ShanghaiSpec as SPEC;
                 $e
             }
-            $crate::SpecId::CANCUN => {
-                use $crate::CancunSpec as SPEC;
+            $crate::SpecId::HERTZ | $crate::SpecId::HERTZ_FIX | $crate::SpecId::KEPLER => {
+                use $crate::HertzSpec as SPEC;
                 $e
             }
-            $crate::SpecId::LATEST => {
-                use $crate::LatestSpec as SPEC;
+            $crate::SpecId::FEYNMAN | $crate::SpecId::FEYNMAN_FIX => {
+                use $crate::FeynmanSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::CANCUN => {
+                use $crate::CancunSpec as SPEC;
                 $e
             }
             $crate::SpecId::PRAGUE => {
                 use $crate::PragueSpec as SPEC;
                 $e
             }
-            $crate::SpecId::RAMANUJAN => {
-                use $crate::RamanujanSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::NIELS => {
-                use $crate::NielsSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::MIRROR_SYNC => {
-                use $crate::MirrorSyncSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::BRUNO => {
-                use $crate::BrunoSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::EULER => {
-                use $crate::EulerSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::NANO => {
-                use $crate::NanoSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::MORAN => {
-                use $crate::MoranSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::GIBBS => {
-                use $crate::GibbsSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::PLANCK => {
-                use $crate::PlanckSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::LUBAN => {
-                use $crate::LubanSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::PLATO => {
-                use $crate::PlatoSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::HERTZ => {
-                use $crate::HertzSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::HERTZ_FIX => {
-                use $crate::HertzFixSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::KEPLER => {
-                use $crate::KeplerSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::FEYNMAN => {
-                use $crate::FeynmanSpec as SPEC;
-                $e
-            }
-            $crate::SpecId::FEYNMAN_FIX => {
-                use $crate::FeynmanFixSpec as SPEC;
-                $e
-            }
             $crate::SpecId::HABER => {
                 use $crate::HaberSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::LATEST => {
+                use $crate::LatestSpec as SPEC;
                 $e
             }
         }
