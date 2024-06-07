@@ -5,7 +5,7 @@ use tendermint::{account, public_key};
 /// Tendermint SECP256K1 signature recover precompile for BSC.
 pub(crate) const TM_SECP256K1_SIGNATURE_RECOVER: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(105),
-    Precompile::Standard(crate::tm_secp256k1::tm_secp256k1_signature_recover_run),
+    Precompile::Standard(tm_secp256k1_signature_recover_run),
 );
 
 const SECP256K1_PUBKEY_LENGTH: usize = 33;
