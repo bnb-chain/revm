@@ -105,11 +105,11 @@ pub enum SpecId {
     LONDON = 22,         // London                               31302048
     HERTZ = 23,          // Hertz                                31302048
     HERTZ_FIX = 24,      // HertzFix                             34140700
-    SHANGHAI = 25,       // Shanghai                             timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    KEPLER = 26,         // Kepler                               timestamp(1705996800)  2024-01-23 08:00:00 AM UTC
-    FEYNMAN = 27,        // Feynman                              timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    FEYNMAN_FIX = 28,    // FeynmanFix                           timestamp(1713419340)  2024-04-18 05:49:00 AM UTC
-    CANCUN = 29,         // Cancun                               timestamp(1718863500)  2024-06-20 06:05:00 AM UTC
+    SHANGHAI = 25,       // Shanghai                             timestamp(1705996800)
+    KEPLER = 26,         // Kepler                               timestamp(1705996800)
+    FEYNMAN = 27,        // Feynman                              timestamp(1713419340)
+    FEYNMAN_FIX = 28,    // FeynmanFix                           timestamp(1713419340)
+    CANCUN = 29,         // Cancun                               timestamp(1718863500)
     HABER = 30,          // Haber                                TBD
 
     // TODO: or u8::MAX - n?

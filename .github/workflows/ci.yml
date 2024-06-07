@@ -23,7 +23,7 @@ jobs:
       matrix:
         rust: ["stable", "beta", "nightly"]
 #        flags: ["--no-default-features", "", "--all-features"]
-        flags: ["", "--features bsc", "--features optimism,opbnb"]
+        flags: ["--no-default-features", "", "--features bsc", "--features optimism,opbnb"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -32,46 +32,46 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace ${{ matrix.flags }}
 
-  # test-no-std:
-  #   name: test no_std
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         targets: riscv32imac-unknown-none-elf
-  #     - run: cargo check --target riscv32imac-unknown-none-elf --no-default-features
+  test-no-std:
+   name: test no_std
+   runs-on: ubuntu-latest
+   timeout-minutes: 30
+   steps:
+     - uses: actions/checkout@v4
+     - uses: dtolnay/rust-toolchain@stable
+       with:
+         targets: riscv32imac-unknown-none-elf
+     - run: cargo check --target riscv32imac-unknown-none-elf --no-default-features
 
-#  check-no-default-features:
-#    name: check no-default-features
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 30
-#    steps:
-#      - uses: actions/checkout@v4
-#      - run: |
-#          cd crates/revm
-#          cargo check --no-default-features
-#
-#  check-serde:
-#    name: check serde
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 30
-#    steps:
-#      - uses: actions/checkout@v4
-#      - run: |
-#          cd crates/revm
-#          cargo check --no-default-features --features serde
-#
-#  check-std:
-#    name: check std
-#    runs-on: ubuntu-latest
-#    timeout-minutes: 30
-#    steps:
-#      - uses: actions/checkout@v4
-#      - run: |
-#          cd crates/revm
-#          cargo check --no-default-features --features std
+  check-no-default-features:
+    name: check no-default-features
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd crates/revm
+          cargo check --no-default-features
+
+  check-serde:
+    name: check serde
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd crates/revm
+          cargo check --no-default-features --features serde
+
+  check-std:
+    name: check std
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cd crates/revm
+          cargo check --no-default-features --features std
 
   clippy:
     name: clippy / ${{ matrix.network }}

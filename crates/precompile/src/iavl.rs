@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use parity_bytes::BytesRef;
 use tendermint::lite::iavl_proof;
@@ -5,56 +7,56 @@ use tendermint::lite::iavl_proof;
 /// Iavl proof validation precompile for BSC.
 pub(crate) const IAVL_PROOF_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
-    Precompile::Standard(crate::iavl::iavl_proof_validation_run),
+    Precompile::Standard(iavl_proof_validation_run),
 );
 
 /// Iavl proof validation precompile for BSC after Nano hardfork.
 pub(crate) const IAVL_PROOF_VALIDATION_NANO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
-    Precompile::Standard(crate::iavl::iavl_proof_validation_run_nano),
+    Precompile::Standard(iavl_proof_validation_run_nano),
 );
 
 /// Iavl proof validation precompile for BSC after Moran hardfork.
 pub(crate) const IAVL_PROOF_VALIDATION_MORAN: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
-    Precompile::Standard(crate::iavl::iavl_proof_validation_run_moran),
+    Precompile::Standard(iavl_proof_validation_run_moran),
 );
 
 /// Iavl proof validation precompile for BSC after Planck hardfork.
 pub(crate) const IAVL_PROOF_VALIDATION_PLANCK: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
-    Precompile::Standard(crate::iavl::iavl_proof_validation_run_planck),
+    Precompile::Standard(iavl_proof_validation_run_planck),
 );
 
 /// Iavl proof validation precompile for BSC after Plato hardfork.
 pub(crate) const IAVL_PROOF_VALIDATION_PLATO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(101),
-    Precompile::Standard(crate::iavl::iavl_proof_validation_run_plato),
+    Precompile::Standard(iavl_proof_validation_run_plato),
 );
 
 /// Run Iavl proof validation.
 fn iavl_proof_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
-    return iavl_proof_validation_run_inner(input, gas_limit, false, false, false);
+    iavl_proof_validation_run_inner(input, gas_limit, false, false, false)
 }
 
 /// Run Iavl proof validation with Nano hardfork.
 fn iavl_proof_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> PrecompileResult {
-    return Err(PrecompileError::other("suspended"));
+    Err(PrecompileError::other("suspended"))
 }
 
 /// Run Iavl proof validation with Moran hardfork.
 fn iavl_proof_validation_run_moran(input: &Bytes, gas_limit: u64) -> PrecompileResult {
-    return iavl_proof_validation_run_inner(input, gas_limit, true, false, false);
+    iavl_proof_validation_run_inner(input, gas_limit, true, false, false)
 }
 
 /// Run Iavl proof validation with Planck hardfork.
 fn iavl_proof_validation_run_planck(input: &Bytes, gas_limit: u64) -> PrecompileResult {
-    return iavl_proof_validation_run_inner(input, gas_limit, false, true, false);
+    iavl_proof_validation_run_inner(input, gas_limit, false, true, false)
 }
 
 /// Run Iavl proof validation with Plato hardfork.
 fn iavl_proof_validation_run_plato(input: &Bytes, gas_limit: u64) -> PrecompileResult {
-    return iavl_proof_validation_run_inner(input, gas_limit, false, false, true);
+    iavl_proof_validation_run_inner(input, gas_limit, false, false, true)
 }
 
 /// Run Iavl proof validation with given hardfork toggles.
@@ -79,7 +81,7 @@ fn iavl_proof_validation_run_inner(
             IAVL_PROOF_VALIDATION_BASE,
             Bytes::copy_from_slice(&output[..]),
         )),
-        Err(str) => Err(PrecompileError::Other(String::from(str))),
+        Err(str) => Err(PrecompileError::other(str)),
     }
 }
 
@@ -125,7 +127,7 @@ mod tests {
 
         assert_eq!(
             res.err(),
-            Some(PrecompileError::Other(String::from("invalid merkle proof")))
+            Some(PrecompileError::other("invalid merkle proof"))
         );
     }
 
@@ -146,7 +148,7 @@ mod tests {
 
             assert_eq!(
                 res.err(),
-                Some(PrecompileError::Other(String::from("invalid merkle proof")))
+                Some(PrecompileError::other("invalid merkle proof"))
             );
         });
 
@@ -155,7 +157,7 @@ mod tests {
 
         assert_eq!(
             res.err(),
-            Some(PrecompileError::Other(String::from("invalid merkle proof")))
+            Some(PrecompileError::other("invalid merkle proof"))
         );
     }
 

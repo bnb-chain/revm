@@ -48,14 +48,14 @@ const MAX_CONSENSUS_STATE_LENGTH: u64 = CHAIN_ID_LENGTH
     + 99 * SINGLE_VALIDATOR_BYTES_LENGTH;
 
 fn cometbft_light_block_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
-    return cometbft_light_block_validation_run_inner(input, gas_limit, true);
+    cometbft_light_block_validation_run_inner(input, gas_limit, true)
 }
 
 fn cometbft_light_block_validation_run_before_hertz(
     input: &Bytes,
     gas_limit: u64,
 ) -> PrecompileResult {
-    return cometbft_light_block_validation_run_inner(input, gas_limit, false);
+    cometbft_light_block_validation_run_inner(input, gas_limit, false)
 }
 
 fn cometbft_light_block_validation_run_inner(

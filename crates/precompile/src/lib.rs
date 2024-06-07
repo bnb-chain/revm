@@ -25,6 +25,7 @@ pub mod secp256k1;
 #[cfg(feature = "secp256r1")]
 pub mod secp256r1;
 mod tendermint;
+#[cfg(feature = "secp256k1")]
 mod tm_secp256k1;
 pub mod utilities;
 
@@ -286,10 +287,10 @@ impl Precompiles {
             let precompiles = Self::hertz().clone();
             let precompiles = {
                 let mut precompiles = precompiles;
-                precompiles.extend([
-                    tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER,
-                    double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION,
-                ]);
+                // this feature is enabled with bsc
+                #[cfg(feature = "secp256k1")]
+                precompiles.extend([tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER]);
+                precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
                 precompiles
             };
 

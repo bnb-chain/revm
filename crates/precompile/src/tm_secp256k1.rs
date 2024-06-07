@@ -30,12 +30,12 @@ fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> Precompi
     if input_length
         != SECP256K1_PUBKEY_LENGTH + SECP256K1_SIGNATURE_LENGTH + SECP256K1_SIGNATURE_MSGHASH_LENGTH
     {
-        return Err(PrecompileError::Other(String::from("invalid input")));
+        return Err(PrecompileError::other("invalid input"));
     }
 
     let public_key = match PublicKey::from_slice(&input[..SECP256K1_PUBKEY_LENGTH]) {
         Ok(pk) => pk,
-        Err(_) => return Err(PrecompileError::Other(String::from("invalid pubkey"))),
+        Err(_) => return Err(PrecompileError::other("invalid pubkey")),
     };
 
     let message = Message::from_digest(
@@ -48,19 +48,19 @@ fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> Precompi
         &input[SECP256K1_PUBKEY_LENGTH..SECP256K1_PUBKEY_LENGTH + SECP256K1_SIGNATURE_LENGTH],
     ) {
         Ok(s) => s,
-        Err(_) => return Err(PrecompileError::Other(String::from("invalid signature"))),
+        Err(_) => return Err(PrecompileError::other("invalid signature")),
     };
 
     let res = sig.verify(&message, &public_key).is_ok();
 
     if !res {
-        return Err(PrecompileError::Other(String::from("invalid signature")));
+        return Err(PrecompileError::other("invalid signature"));
     }
 
     let tm_pub_key =
         match public_key::PublicKey::from_raw_secp256k1(&input[..SECP256K1_PUBKEY_LENGTH]) {
             Some(pk) => pk,
-            None => return Err(PrecompileError::Other(String::from("invalid pubkey"))),
+            None => return Err(PrecompileError::other("invalid pubkey")),
         };
 
     return Ok((
