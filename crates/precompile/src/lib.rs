@@ -149,6 +149,9 @@ impl Precompiles {
     pub fn berlin() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
+            #[cfg(feature = "bsc")]
+            let mut precompiles = Self::plato().clone();
+            #[cfg(not(feature = "bsc"))]
             let mut precompiles = Self::istanbul().clone();
             precompiles.extend([
                 // EIP-2565: ModExp Gas Cost.
@@ -164,15 +167,11 @@ impl Precompiles {
     pub fn fermat() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::berlin().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([
-                    bls::BLS_SIGNATURE_VALIDATION,
-                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
-                ]);
-                precompiles
-            };
+            let mut precompiles = Self::berlin().clone();
+            precompiles.extend([
+                bls::BLS_SIGNATURE_VALIDATION,
+                cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION,
+            ]);
 
             Box::new(precompiles)
         })
@@ -182,15 +181,11 @@ impl Precompiles {
     pub fn nano() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::istanbul().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([
-                    tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
-                    iavl::IAVL_PROOF_VALIDATION_NANO,
-                ]);
-                precompiles
-            };
+            let mut precompiles = Self::istanbul().clone();
+            precompiles.extend([
+                tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
+                iavl::IAVL_PROOF_VALIDATION_NANO,
+            ]);
 
             Box::new(precompiles)
         })
@@ -200,15 +195,11 @@ impl Precompiles {
     pub fn moran() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::istanbul().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([
-                    tendermint::TENDERMINT_HEADER_VALIDATION,
-                    iavl::IAVL_PROOF_VALIDATION_MORAN,
-                ]);
-                precompiles
-            };
+            let mut precompiles = Self::istanbul().clone();
+            precompiles.extend([
+                tendermint::TENDERMINT_HEADER_VALIDATION,
+                iavl::IAVL_PROOF_VALIDATION_MORAN,
+            ]);
 
             Box::new(precompiles)
         })
@@ -218,15 +209,11 @@ impl Precompiles {
     pub fn planck() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::istanbul().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([
-                    tendermint::TENDERMINT_HEADER_VALIDATION,
-                    iavl::IAVL_PROOF_VALIDATION_PLANCK,
-                ]);
-                precompiles
-            };
+            let mut precompiles = Self::istanbul().clone();
+            precompiles.extend([
+                tendermint::TENDERMINT_HEADER_VALIDATION,
+                iavl::IAVL_PROOF_VALIDATION_PLANCK,
+            ]);
 
             Box::new(precompiles)
         })
@@ -236,15 +223,11 @@ impl Precompiles {
     pub fn luban() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::planck().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([
-                    bls::BLS_SIGNATURE_VALIDATION,
-                    cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION_BEFORE_HERTZ,
-                ]);
-                precompiles
-            };
+            let mut precompiles = Self::planck().clone();
+            precompiles.extend([
+                bls::BLS_SIGNATURE_VALIDATION,
+                cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION_BEFORE_HERTZ,
+            ]);
 
             Box::new(precompiles)
         })
@@ -254,12 +237,8 @@ impl Precompiles {
     pub fn plato() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::luban().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
-                precompiles
-            };
+            let mut precompiles = Self::luban().clone();
+            precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
 
             Box::new(precompiles)
         })
@@ -269,12 +248,8 @@ impl Precompiles {
     pub fn hertz() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::plato().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                precompiles.extend([cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION]);
-                precompiles
-            };
+            let mut precompiles = Self::berlin().clone();
+            precompiles.extend([cometbft::COMETBFT_LIGHT_BLOCK_VALIDATION]);
 
             Box::new(precompiles)
         })
