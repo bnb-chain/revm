@@ -38,7 +38,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     let pub_keys_data = &input[msg_and_sig_length as usize..].to_vec();
 
     // check signature format
-    if let Err(_) = bls::signature_to_point(&signature.to_vec()) {
+    if bls::signature_to_point(&signature.to_vec()).is_err() {
         return Ok((cost, Bytes::default()));
     }
 
