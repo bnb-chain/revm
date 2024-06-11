@@ -29,7 +29,8 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     if (input_length <= msg_and_sig_length)
         || ((input_length - msg_and_sig_length) % BLS_SINGLE_PUBKEY_LENGTH != 0)
     {
-        return Err(Error::BLSInvalidInputLength);
+        // return zero bytes rather than error to keep align with bsc
+        return Ok((cost, Bytes::default()));
     }
 
     let msg_hash: &Vec<u8> = &input[..BLS_MSG_HASH_LENGTH as usize].to_vec();
@@ -37,7 +38,9 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     let pub_keys_data = &input[msg_and_sig_length as usize..].to_vec();
 
     // check signature format
-    let _ = bls::signature_to_point(&signature.to_vec()).map_err(|_| Error::BLSInvalidSignature)?;
+    if let Err(_) = bls::signature_to_point(&signature.to_vec()) {
+        return Ok((cost, Bytes::default()));
+    }
 
     let pub_key_count = (input_length - msg_and_sig_length) / BLS_SINGLE_PUBKEY_LENGTH;
     let mut pub_keys = Vec::with_capacity(pub_key_count as usize);
@@ -48,13 +51,13 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
         let pub_key = &pub_keys_data[i as usize * BLS_SINGLE_PUBKEY_LENGTH as usize
             ..(i + 1) as usize * BLS_SINGLE_PUBKEY_LENGTH as usize];
         if !bls::key_validate(&pub_key.to_vec()) {
-            return Err(Error::BLSInvalidPublicKey);
+            return Ok((cost, Bytes::default()));
         }
         pub_keys.push(pub_key.to_vec());
         msg_hashes.push(msg_hash.clone().to_vec());
     }
     if pub_keys.is_empty() {
-        return Err(Error::BLSInvalidPublicKey);
+        return Ok((cost, Bytes::default()));
     }
 
     // verify signature
@@ -133,8 +136,8 @@ mod tests {
         input.extend_from_slice(&pub_key);
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::BLSInvalidSignature),
+            Ok((_, data)) => assert_eq!(data, Bytes::default()),
+            Err(_) => panic!("should not return error"),
         }
 
         // wrong pubkey
@@ -147,8 +150,8 @@ mod tests {
         input.extend_from_slice(&pub_key);
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::BLSInvalidSignature),
+            Ok((_, data)) => assert_eq!(data, Bytes::default()),
+            Err(_) => panic!("should not return error"),
         }
     }
 
@@ -205,8 +208,8 @@ mod tests {
         input.extend_from_slice(&pub_key3);
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::BLSInvalidSignature),
+            Ok((_, data)) => assert_eq!(data, Bytes::default()),
+            Err(_) => panic!("should not return error"),
         }
 
         // invalid pubkey
@@ -223,8 +226,8 @@ mod tests {
         input.extend_from_slice(&pub_key3);
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::BLSInvalidSignature),
+            Ok((_, data)) => assert_eq!(data, Bytes::default()),
+            Err(_) => panic!("should not return error"),
         }
 
         // duplicate pubkey

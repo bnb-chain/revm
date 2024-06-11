@@ -121,8 +121,14 @@ impl<DB: Database> EvmContext<DB> {
         match out {
             Ok((gas_used, data)) => {
                 if result.gas.record_cost(gas_used) {
-                    result.result = InstructionResult::Return;
-                    result.output = data;
+                    // to keep align with bsc, revert if data is empty.
+                    // revert will not cost all gas
+                    if data.is_empty() {
+                        result.result = InstructionResult::Revert;
+                    } else {
+                        result.result = InstructionResult::Return;
+                        result.output = data;
+                    }
                 } else {
                     result.result = InstructionResult::PrecompileOOG;
                 }
