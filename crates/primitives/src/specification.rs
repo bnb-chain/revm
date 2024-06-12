@@ -599,12 +599,12 @@ macro_rules! spec_to_generic {
                 use $crate::MergeSpec as SPEC;
                 $e
             }
-            $crate::SpecId::SHANGHAI => {
-                use $crate::ShanghaiSpec as SPEC;
+            $crate::SpecId::HERTZ | $crate::SpecId::HERTZ_FIX => {
+                use $crate::HertzSpec as SPEC;
                 $e
             }
-            $crate::SpecId::HERTZ | $crate::SpecId::HERTZ_FIX | $crate::SpecId::KEPLER => {
-                use $crate::HertzSpec as SPEC;
+            $crate::SpecId::SHANGHAI | $crate::SpecId::KEPLER => {
+                use $crate::ShanghaiSpec as SPEC;
                 $e
             }
             $crate::SpecId::FEYNMAN | $crate::SpecId::FEYNMAN_FIX => {
