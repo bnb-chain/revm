@@ -4,7 +4,7 @@ use alloy_primitives::{BlockNumber, ChainId, U256};
 use alloy_rlp::{Decodable, RlpDecodable, RlpEncodable};
 use core::cmp::Ordering;
 use revm_primitives::alloy_primitives::B512;
-use revm_primitives::{keccak256, PrecompileError, B256};
+use revm_primitives::{keccak256, B256};
 
 /// Double sign evidence validation precompile for BSC.
 pub(crate) const DOUBLE_SIGN_EVIDENCE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
@@ -81,37 +81,36 @@ fn double_sign_evidence_validation_run(input: &Bytes, gas_limit: u64) -> Precomp
 
     let evidence = match DoubleSignEvidence::decode(&mut input.iter().as_ref()) {
         Ok(e) => e,
-        // return zero bytes rather than error to keep align with bsc
-        Err(_) => return Ok((DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE, Bytes::default())),
+        Err(_) => return Err(Error::Reverted(DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE)),
     };
 
     let header1 = match Header::decode(&mut evidence.header_bytes1.as_ref()) {
         Ok(e) => e,
-        Err(_) => return Ok((DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE, Bytes::default())),
+        Err(_) => return Err(Error::Reverted(DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE)),
     };
     let header2 = match Header::decode(&mut evidence.header_bytes2.as_ref()) {
         Ok(e) => e,
-        Err(_) => return Ok((DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE, Bytes::default())),
+        Err(_) => return Err(Error::Reverted(DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE)),
     };
 
     // basic check
     if header1.number.to_be_bytes().len() > 32 || header2.number.to_be_bytes().len() > 32 {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
     if header1.number != header2.number {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
     if header1.parent_hash.cmp(&header2.parent_hash) != Ordering::Equal {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
 
     if header1.extra.len() < EXTRA_SEAL_LENGTH || header1.extra.len() < EXTRA_SEAL_LENGTH {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
     let sig1 = &header1.extra[header1.extra.len() - EXTRA_SEAL_LENGTH..];
     let sig2 = &header2.extra[header2.extra.len() - EXTRA_SEAL_LENGTH..];
     if sig1.eq(sig2) {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
 
     // check signature
@@ -119,25 +118,25 @@ fn double_sign_evidence_validation_run(input: &Bytes, gas_limit: u64) -> Precomp
     let msg_hash2 = seal_hash(&header2, evidence.chain_id);
 
     if msg_hash1.eq(&msg_hash2) {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
 
     let recid1 = sig1[64];
     let sig1 = <&B512>::try_from(&sig1[..64]).unwrap();
     let addr1 = match secp256k1::ecrecover(sig1, recid1, &msg_hash1) {
         Ok(pk) => pk,
-        Err(_) => return Ok((DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE, Bytes::default())),
+        Err(_) => return Err(Error::Reverted(DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE)),
     };
 
     let recid2 = sig2[64];
     let sig2 = <&B512>::try_from(&sig2[..64]).unwrap();
     let addr2 = match secp256k1::ecrecover(sig2, recid2, &msg_hash2) {
         Ok(pk) => pk,
-        Err(_) => return Ok((DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE, Bytes::default())),
+        Err(_) => return Err(Error::Reverted(DOUBLE_SIGN_EVIDENCE_VALIDATION_BASE)),
     };
 
     if !addr1.eq(&addr2) {
-        return Err(PrecompileError::other("invalid evidence"));
+        return Err(Error::other("invalid evidence"));
     }
 
     let mut res = [0; 52];
@@ -198,6 +197,6 @@ mod tests {
         let input = hex::decode("f9066b38b90332f9032fa01062d3d5015b9242bc193a9b0769f3d3780ecb55f97f40a752ae26d0b68cd0d8a0fae1a05fcb14bfd9b8a9f2b65007a9b6c2000de0627a73be644dd993d32342c494df87f0e2b8519ea2dd4abd8b639cdd628497ed25a0f385cc58ed297ff0d66eb5580b02853d3478ba418b1819ac659ee05df49b9794a0bf88464af369ed6b8cf02db00f0b9556ffa8d49cd491b00952a7f83431446638a00a6d0870e586a76278fbfdcedf76ef6679af18fc1f9137cfad495f434974ea81b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001a1010000000000000000000000000000000000000000000000000000000000000000830f4240830f42408465bc6996b90115d983010306846765746889676f312e32302e3131856c696e7578000053474aa9f8b25fb860b0844a5082bfaa2299d2a23f076e2f6b17b15f839cc3e7d5a875656f6733fd4b87ba3401f906d15f3dea263cd9a6076107c7db620a4630dd3832c4a4b57eb8f497e28a3d69e5c03b30205c4b45675747d513e1accd66329770f3c35b18c9d023f84c84023a5ad6a086a28d985d9a6c8e7f9a4feadd5ace0adba9818e1e1727edca755fcc0bd8344684023a5ad7a0bc3492196b2e68b8e6ceea87cfa7588b4d590089eb885c4f2c1e9d9fb450f7b980988e1b9d0beb91dab063e04879a24c43d33baae3759dee41fd62ffa83c77fd202bea27a829b49e8025bdd198393526dd12b223ab16052fd26a43f3aabf63e76901a0232c9ba2d41b40d36ed794c306747bcbc49bf61a0f37409c18bfe2b5bef26a2d880000000000000000b90332f9032fa01062d3d5015b9242bc193a9b0769f3d3780ecb55f97f40a752ae26d0b68cd0d8a0b2789a5357827ed838335283e15c4dcc42b9bebcbf2919a18613246787e2f96094df87f0e2b8519ea2dd4abd8b639cdd628497ed25a071ce4c09ee275206013f0063761bc19c93c13990582f918cc57333634c94ce89a00e095703e5c9b149f253fe89697230029e32484a410b4b1f2c61442d73c3095aa0d317ae19ede7c8a2d3ac9ef98735b049bcb7278d12f48c42b924538b60a25e12b901000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001a1010000000000000000000000000000000000000000000000000000000000000000830f4240830f42408465bc6996b90115d983010306846765746889676f312e32302e3131856c696e7578000053474aa9f8b25fb860b0844a5082bfaa2299d2a23f076e2f6b17b15f839cc3e7d5a875656f6733fd4b87ba3401f906d15f3dea263cd9a6076107c7db620a4630dd3832c4a4b57eb8f497e28a3d69e5c03b30205c4b45675747d513e1accd66329770f3c35b18c9d023f84c84023a5ad6a086a28d985d9a6c8e7f9a4feadd5ace0adba9818e1e1727edca755fcc0bd8344684023a5ad7a0bc3492196b2e68b8e6ceea87cfa7588b4d590089eb885c4f2c1e9d9fb450f7b9804c71ed015dd0c5c2d7393b68c2927f83f0a5da4c66f761f09e2f950cc610832c7876144599368404096ddef0eadacfde57717e2c7d23982b927285b797d41bfa00a0b56228685be711834d0f154292d07826dea42a0fad3e4f56c31470b7fbfbea26880000000000000000").unwrap();
 
         let res = double_sign_evidence_validation_run(&Bytes::from(input), 10_000);
-        assert_eq!(res.unwrap().1, Bytes::default());
+        assert_eq!(res.err(), Some(Error::Reverted(10000)));
     }
 }

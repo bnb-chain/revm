@@ -133,6 +133,10 @@ pub enum PrecompileError {
     CometBftEncodeConsensusStateFailed,
     /// Catch-all variant for other errors.
     Other(String),
+    /// Reverted error
+    /// This is for BSC EVM compatibility specially.
+    /// This error will not consume all gas but only the returned amount.
+    Reverted(u64),
 }
 
 impl PrecompileError {
@@ -163,6 +167,7 @@ impl fmt::Display for PrecompileError {
             Self::CometBftApplyBlockFailed => "failed to apply cometbft block",
             Self::CometBftEncodeConsensusStateFailed => "failed to encode cometbft consensus state",
             Self::Other(s) => s,
+            Self::Reverted(_) => "execution reverted",
         };
         f.write_str(s)
     }

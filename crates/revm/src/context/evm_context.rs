@@ -13,7 +13,6 @@ use core::{
     fmt,
     ops::{Deref, DerefMut},
 };
-use revm_precompile::u64_to_address;
 use std::boxed::Box;
 
 /// EVM context that contains the inner EVM context and precompiles.
@@ -122,23 +121,24 @@ impl<DB: Database> EvmContext<DB> {
         match out {
             Ok((gas_used, data)) => {
                 if result.gas.record_cost(gas_used) {
-                    // to keep align with bsc, revert if data is empty.
-                    // revert will not cost all gas
-                    if is_bsc_precompile(address) && data.is_empty() {
-                        result.result = InstructionResult::Revert;
-                    } else {
-                        result.result = InstructionResult::Return;
-                        result.output = data;
-                    }
+                    result.result = InstructionResult::Return;
+                    result.output = data;
                 } else {
                     result.result = InstructionResult::PrecompileOOG;
                 }
             }
             Err(e) => {
-                result.result = if e == crate::precompile::Error::OutOfGas {
-                    InstructionResult::PrecompileOOG
-                } else {
-                    InstructionResult::PrecompileError
+                result.result = match e{
+                    crate::precompile::Error::OutOfGas => InstructionResult::PrecompileOOG,
+                    // for BSC compatibility
+                    crate::precompile::Error::Reverted(gas_used) => {
+                        if result.gas.record_cost(gas_used) {
+                            InstructionResult::Revert
+                        } else {
+                            InstructionResult::PrecompileOOG
+                        }
+                    },
+                    _ => InstructionResult::PrecompileError,
                 };
             }
         }
@@ -225,14 +225,6 @@ impl<DB: Database> EvmContext<DB> {
             return_result(InstructionResult::Stop)
         }
     }
-}
-
-// Helper to check if the address is some specific bsc precompile address.
-fn is_bsc_precompile(address: Address) -> bool {
-    let bls_sig_validation = u64_to_address(102);
-    let double_sign_evidence_validation = u64_to_address(104);
-
-    address == bls_sig_validation || address == double_sign_evidence_validation
 }
 
 /// Test utilities for the [`EvmContext`].
