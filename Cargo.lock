@@ -3823,6 +3823,7 @@ dependencies = [
  "ethers-core",
  "ethers-providers",
  "indicatif",
+ "log",
  "reqwest 0.12.4",
  "revm-interpreter",
  "revm-precompile",

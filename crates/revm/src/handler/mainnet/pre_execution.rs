@@ -2,6 +2,7 @@
 //!
 //! They handle initial setup of the EVM, call loop and the final return of the EVM
 
+use log::debug;
 use crate::{
     precompile::{PrecompileSpecId, Precompiles},
     primitives::{
@@ -16,6 +17,7 @@ use crate::{
 /// Main precompile load
 #[inline]
 pub fn load_precompiles<SPEC: Spec, DB: Database>() -> ContextPrecompiles<DB> {
+    debug!("got spec_id: {:?}", SPEC::SPEC_ID);
     Precompiles::new(PrecompileSpecId::from_spec_id(SPEC::SPEC_ID))
         .clone()
         .into()
