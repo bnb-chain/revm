@@ -344,6 +344,8 @@ spec!(PLATO, PlatoSpec);
 #[cfg(feature = "bsc")]
 spec!(HERTZ, HertzSpec);
 #[cfg(feature = "bsc")]
+spec!(KEPLER, KeplerSpec);
+#[cfg(feature = "bsc")]
 spec!(FEYNMAN, FeynmanSpec);
 #[cfg(any(feature = "bsc", feature = "opbnb"))]
 spec!(HABER, HaberSpec);
@@ -603,8 +605,12 @@ macro_rules! spec_to_generic {
                 use $crate::HertzSpec as SPEC;
                 $e
             }
-            $crate::SpecId::SHANGHAI | $crate::SpecId::KEPLER => {
+            $crate::SpecId::SHANGHAI => {
                 use $crate::ShanghaiSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::KEPLER => {
+                use $crate::KeplerSpec as SPEC;
                 $e
             }
             $crate::SpecId::FEYNMAN | $crate::SpecId::FEYNMAN_FIX => {
@@ -708,7 +714,7 @@ mod tests {
         #[cfg(feature = "bsc")]
         spec_to_generic!(HERTZ_FIX, assert_eq!(SPEC::SPEC_ID, HERTZ));
         #[cfg(feature = "bsc")]
-        spec_to_generic!(KEPLER, assert_eq!(SPEC::SPEC_ID, SHANGHAI));
+        spec_to_generic!(KEPLER, assert_eq!(SPEC::SPEC_ID, KEPLER));
         #[cfg(feature = "bsc")]
         spec_to_generic!(FEYNMAN, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
         #[cfg(feature = "bsc")]

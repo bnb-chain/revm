@@ -84,6 +84,7 @@ impl Precompiles {
             PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::PRAGUE => Self::prague(),
+            PrecompileSpecId::HABER => Self::haber(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
     }
@@ -259,15 +260,12 @@ impl Precompiles {
     pub fn feynman() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let precompiles = Self::hertz().clone();
-            let precompiles = {
-                let mut precompiles = precompiles;
-                // this feature is enabled with bsc
-                #[cfg(feature = "secp256k1")]
-                precompiles.extend([tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER]);
-                precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
-                precompiles
-            };
+            let mut precompiles = Self::hertz().clone();
+            precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
+
+            // this feature is enabled with bsc
+            #[cfg(feature = "secp256k1")]
+            precompiles.extend([tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER]);
 
             Box::new(precompiles)
         })
@@ -280,6 +278,9 @@ impl Precompiles {
     pub fn cancun() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
+            #[cfg(feature = "bsc")]
+            let precompiles = Self::feynman().clone();
+            #[cfg(not(feature = "bsc"))]
             let precompiles = Self::berlin().clone();
 
             // Don't include KZG point evaluation precompile in no_std builds.
@@ -319,9 +320,30 @@ impl Precompiles {
         })
     }
 
+    /// Returns precompiles for Haber spec.
+    pub fn haber() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::cancun().clone();
+
+            #[cfg(feature = "secp256r1")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([secp256r1::P256VERIFY]);
+                precompiles
+            };
+
+            Box::new(precompiles)
+        })
+    }
+
     /// Returns the precompiles for the latest spec.
     pub fn latest() -> &'static Self {
-        Self::prague()
+        if cfg!(feature = "bsc") {
+            Self::haber()
+        } else {
+            Self::prague()
+        }
     }
 
     /// Returns an iterator over the precompiles addresses.
@@ -402,6 +424,7 @@ pub enum PrecompileSpecId {
     PLATO,   // BSC PLATO HARDFORK
     HERTZ,   // BSC HERTZ HARDFORK
     FEYNMAN, // BSC FEYNMAN HARDFORK
+    HABER,   // BSC HABER HARDFORK
 
     CANCUN,
     PRAGUE,
@@ -434,7 +457,7 @@ impl PrecompileSpecId {
             #[cfg(feature = "bsc")]
             HERTZ | HERTZ_FIX | KEPLER => Self::HERTZ,
             #[cfg(feature = "bsc")]
-            FEYNMAN | FEYNMAN_FIX | HABER => Self::FEYNMAN,
+            FEYNMAN | FEYNMAN_FIX => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
             PRAGUE => Self::PRAGUE,
             #[cfg(feature = "optimism")]
@@ -443,8 +466,8 @@ impl PrecompileSpecId {
             ECOTONE | FJORD => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
-            #[cfg(feature = "opbnb")]
-            HABER => Self::CANCUN,
+            #[cfg(any(feature = "bsc", feature = "opbnb"))]
+            HABER => Self::HABER,
             LATEST => Self::LATEST,
         }
     }
