@@ -13,6 +13,7 @@ use cometbft_proto::types::v1::LightBlock as TmLightBlock;
 use prost::Message;
 use revm_primitives::Bytes;
 use std::{borrow::ToOwned, string::String, vec::Vec};
+use log::debug;
 
 pub(crate) const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
@@ -48,6 +49,7 @@ const MAX_CONSENSUS_STATE_LENGTH: u64 = CHAIN_ID_LENGTH
     + 99 * SINGLE_VALIDATOR_BYTES_LENGTH;
 
 fn cometbft_light_block_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
+    debug!("cometbft_light_block_validation_run");
     cometbft_light_block_validation_run_inner(input, gas_limit, true)
 }
 
@@ -55,6 +57,7 @@ fn cometbft_light_block_validation_run_before_hertz(
     input: &Bytes,
     gas_limit: u64,
 ) -> PrecompileResult {
+    debug!("cometbft_light_block_validation_run_before_hertz");
     cometbft_light_block_validation_run_inner(input, gas_limit, false)
 }
 

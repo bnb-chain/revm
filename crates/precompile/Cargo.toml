@@ -59,6 +59,7 @@ p256 = { version = "0.13.2", optional = true,  default-features = false, feature
 
 # BLS12-381 precompiles
 blst = { version = "0.3.11", optional = true }
+log = "0.4.21"
 
 [dev-dependencies]
 criterion = { version = "0.5" }
