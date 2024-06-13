@@ -708,7 +708,7 @@ mod tests {
         #[cfg(feature = "bsc")]
         spec_to_generic!(HERTZ_FIX, assert_eq!(SPEC::SPEC_ID, HERTZ));
         #[cfg(feature = "bsc")]
-        spec_to_generic!(KEPLER, assert_eq!(SPEC::SPEC_ID, HERTZ));
+        spec_to_generic!(KEPLER, assert_eq!(SPEC::SPEC_ID, SHANGHAI));
         #[cfg(feature = "bsc")]
         spec_to_generic!(FEYNMAN, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
         #[cfg(feature = "bsc")]
