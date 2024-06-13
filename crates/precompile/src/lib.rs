@@ -84,6 +84,7 @@ impl Precompiles {
             PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
             PrecompileSpecId::PRAGUE => Self::prague(),
+            PrecompileSpecId::HABER => Self::haber(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
     }
@@ -280,6 +281,9 @@ impl Precompiles {
     pub fn cancun() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
+            #[cfg(feature = "bsc")]
+            let precompiles = Self::feynman().clone();
+            #[cfg(not(feature = "bsc"))]
             let precompiles = Self::berlin().clone();
 
             // Don't include KZG point evaluation precompile in no_std builds.
@@ -319,9 +323,25 @@ impl Precompiles {
         })
     }
 
+    /// Returns precompiles for Haber spec.
+    pub fn haber() -> &'static Self {
+        static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
+        INSTANCE.get_or_init(|| {
+            let precompiles = Self::cancun().clone();
+
+            // TODO
+
+            Box::new(precompiles)
+        })
+    }
+
     /// Returns the precompiles for the latest spec.
     pub fn latest() -> &'static Self {
-        Self::prague()
+        if cfg!(feature = "bsc") {
+            Self::haber()
+        } else {
+            Self::prague()
+        }
     }
 
     /// Returns an iterator over the precompiles addresses.
@@ -402,6 +422,7 @@ pub enum PrecompileSpecId {
     PLATO,   // BSC PLATO HARDFORK
     HERTZ,   // BSC HERTZ HARDFORK
     FEYNMAN, // BSC FEYNMAN HARDFORK
+    HABER,   // BSC HABER HARDFORK
 
     CANCUN,
     PRAGUE,
@@ -430,11 +451,13 @@ impl PrecompileSpecId {
             LUBAN => Self::LUBAN,
             #[cfg(feature = "bsc")]
             PLATO => Self::PLATO,
-            BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE | SHANGHAI => Self::BERLIN,
+            BERLIN | LONDON | ARROW_GLACIER | GRAY_GLACIER | MERGE => Self::BERLIN,
+            #[cfg(not(feature = "bsc"))]
+            SHANGHAI => Self::BERLIN,
             #[cfg(feature = "bsc")]
-            HERTZ | HERTZ_FIX | KEPLER => Self::HERTZ,
+            HERTZ | HERTZ_FIX | SHANGHAI | KEPLER => Self::HERTZ,
             #[cfg(feature = "bsc")]
-            FEYNMAN | FEYNMAN_FIX | HABER => Self::FEYNMAN,
+            FEYNMAN | FEYNMAN_FIX => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
             PRAGUE => Self::PRAGUE,
             #[cfg(feature = "optimism")]
@@ -443,8 +466,8 @@ impl PrecompileSpecId {
             ECOTONE | FJORD => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
-            #[cfg(feature = "opbnb")]
-            HABER => Self::CANCUN,
+            #[cfg(any(feature = "bsc", feature = "opbnb"))]
+            HABER => Self::HABER,
             LATEST => Self::LATEST,
         }
     }
