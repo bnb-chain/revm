@@ -83,7 +83,7 @@ std = [
 hashbrown = ["revm-primitives/hashbrown"]
 asm-keccak = ["revm-primitives/asm-keccak"]
 
-bsc = ["revm-primitives/bsc", "secp256k1"]
+bsc = ["revm-primitives/bsc", "secp256k1", "secp256r1"]
 optimism = ["revm-primitives/optimism", "secp256r1"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = [
