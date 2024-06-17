@@ -110,7 +110,7 @@ pub enum SpecId {
     FEYNMAN = 27,        // Feynman                              timestamp(1713419340)
     FEYNMAN_FIX = 28,    // FeynmanFix                           timestamp(1713419340)
     CANCUN = 29,         // Cancun                               timestamp(1718863500)
-    HABER = 30,          // Haber                                TBD
+    HABER = 30,          // Haber                                timestamp(1718863500)
 
     // TODO: or u8::MAX - n?
     /// Not enabled in bsc

@@ -46,7 +46,7 @@ cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.g
 cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
-tendermint = { git = "https://github.com/forcodedancing/tendermint-rs-parlia", rev = "10cfd14bac4cd4f1180a6670ea44edabfeda2519", features = ["secp256k1"] }
+tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "5c5cccaaf6fb0459c433e6312bed2a24386159db", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
 alloy-rlp = { version = "0.3", default-features = false, features = [
     "arrayvec",

@@ -4795,7 +4795,7 @@ dependencies = [
 [[package]]
 name = "tendermint"
 version = "0.17.0"
-source = "git+https://github.com/forcodedancing/tendermint-rs-parlia?rev=10cfd14bac4cd4f1180a6670ea44edabfeda2519#10cfd14bac4cd4f1180a6670ea44edabfeda2519"
+source = "git+https://github.com/bnb-chain/tendermint-rs-parlia?rev=5c5cccaaf6fb0459c433e6312bed2a24386159db#5c5cccaaf6fb0459c433e6312bed2a24386159db"
 dependencies = [
  "anomaly",
  "async-trait",
@@ -4834,7 +4834,7 @@ dependencies = [
 [[package]]
 name = "tendermint-proto"
 version = "0.17.0"
-source = "git+https://github.com/forcodedancing/tendermint-rs-parlia?rev=10cfd14bac4cd4f1180a6670ea44edabfeda2519#10cfd14bac4cd4f1180a6670ea44edabfeda2519"
+source = "git+https://github.com/bnb-chain/tendermint-rs-parlia?rev=5c5cccaaf6fb0459c433e6312bed2a24386159db#5c5cccaaf6fb0459c433e6312bed2a24386159db"
 dependencies = [
  "anomaly",
  "bytes 0.5.6",
