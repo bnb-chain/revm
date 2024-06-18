@@ -52,7 +52,7 @@ alloy-rlp = { version = "0.3", default-features = false, features = [
     "arrayvec",
     "derive",
 ] }
-alloy-primitives = {version = "0.7.0"}
+alloy-primitives = {version = "0.7.6"}
 
 # p256verify precompile
 p256 = { version = "0.13.2", optional = true,  default-features = false, features = ["ecdsa"] }
