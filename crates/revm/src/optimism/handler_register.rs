@@ -145,7 +145,7 @@ pub fn last_frame_return<SPEC: Spec, EXT, DB: Database>(
 pub fn load_precompiles<SPEC: Spec, EXT, DB: Database>() -> ContextPrecompiles<DB> {
     let mut precompiles = Precompiles::new(PrecompileSpecId::from_spec_id(SPEC::SPEC_ID)).clone();
 
-    if SPEC::enabled(SpecId::FJORD) || SPEC::enabled(SpecId::HABER) {
+    if SPEC::enabled(SpecId::FJORD) {
         precompiles.extend([
             // EIP-7212: secp256r1 P256verify
             secp256r1::P256VERIFY,

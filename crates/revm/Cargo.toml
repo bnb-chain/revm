@@ -88,6 +88,7 @@ portable = ["revm-precompile/portable", "revm-interpreter/portable"]
 
 test-utils = []
 
+bsc = ["revm-interpreter/bsc", "revm-precompile/bsc"]
 optimism = ["revm-interpreter/optimism", "revm-precompile/optimism"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = [

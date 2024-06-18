@@ -22,7 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         rust: ["stable", "beta", "nightly"]
-        flags: ["--no-default-features", "", "--all-features"]
+#        flags: ["--no-default-features", "", "--all-features"]
+        flags: ["--no-default-features", "", "--features bsc", "--features optimism,opbnb"]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
@@ -31,16 +32,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test --workspace ${{ matrix.flags }}
 
-  # test-no-std:
-  #   name: test no_std
-  #   runs-on: ubuntu-latest
-  #   timeout-minutes: 30
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: dtolnay/rust-toolchain@stable
-  #       with:
-  #         targets: riscv32imac-unknown-none-elf
-  #     - run: cargo check --target riscv32imac-unknown-none-elf --no-default-features
+#  test-no-std:
+#   name: test no_std
+#   runs-on: ubuntu-latest
+#   timeout-minutes: 30
+#   steps:
+#     - uses: actions/checkout@v4
+#     - uses: dtolnay/rust-toolchain@stable
+#       with:
+#         targets: riscv32imac-unknown-none-elf
+#     - run: cargo check --target riscv32imac-unknown-none-elf --no-default-features
 
   check-no-default-features:
     name: check no-default-features
@@ -73,26 +74,40 @@ jobs:
           cargo check --no-default-features --features std
 
   clippy:
-    name: clippy
+    name: clippy / ${{ matrix.network }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - network: optimism
+            extra-features: "opbnb"
+          - network: bsc
+            extra-features: ""
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo clippy --workspace --all-targets --all-features
+      - run: cargo clippy --workspace --all-targets --features "${{ matrix.network }} ${{ matrix.extra-features }}"
         env:
           RUSTFLAGS: -Dwarnings
 
   docs:
-    name: docs
+    name: docs / ${{ matrix.network }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - network: optimism
+            extra-features: "opbnb"
+          - network: bsc
+            extra-features: ""
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rust-docs
-      - run: cargo doc --workspace --all-features --no-deps --document-private-items
+      - run: cargo doc --workspace --no-deps --document-private-items --features "${{ matrix.network }} ${{ matrix.extra-features }}"
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
 

@@ -128,10 +128,17 @@ impl<DB: Database> EvmContext<DB> {
                 }
             }
             Err(e) => {
-                result.result = if e == crate::precompile::Error::OutOfGas {
-                    InstructionResult::PrecompileOOG
-                } else {
-                    InstructionResult::PrecompileError
+                result.result = match e {
+                    crate::precompile::Error::OutOfGas => InstructionResult::PrecompileOOG,
+                    // for BSC compatibility
+                    crate::precompile::Error::Reverted(gas_used) => {
+                        if result.gas.record_cost(gas_used) {
+                            InstructionResult::Revert
+                        } else {
+                            InstructionResult::PrecompileOOG
+                        }
+                    }
+                    _ => InstructionResult::PrecompileError,
                 };
             }
         }
