@@ -198,6 +198,11 @@ impl PrecompileError {
     pub fn is_oog(&self) -> bool {
         matches!(self, Self::OutOfGas)
     }
+
+    /// Returns true if the error is reverted
+    pub fn is_reverted(&self) -> bool {
+        matches!(self, Self::Reverted(_))
+    }
 }
 
 impl From<PrecompileError> for PrecompileErrors {

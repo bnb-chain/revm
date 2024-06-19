@@ -11,7 +11,7 @@ use cometbft_light_client_verifier::{
 };
 use cometbft_proto::types::v1::LightBlock as TmLightBlock;
 use prost::Message;
-use revm_primitives::Bytes;
+use revm_primitives::{Bytes, PrecompileOutput};
 use std::{borrow::ToOwned, string::String, vec::Vec};
 
 pub(crate) const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
@@ -66,22 +66,22 @@ fn cometbft_light_block_validation_run_inner(
     const COMETBFT_LIGHT_BLOCK_VALIDATION_BASE: u64 = 3_000;
 
     if COMETBFT_LIGHT_BLOCK_VALIDATION_BASE > gas_limit {
-        return Err(Error::OutOfGas);
+        return Err(Error::OutOfGas.into());
     }
 
     let (mut consensus_state, tm_light_block) = match decode_light_block_validation_input(input) {
         Ok(result) => result,
-        Err(e) => return Err(e),
+        Err(e) => return Err(e.into()),
     };
 
     let light_block = match convert_light_block_from_proto(&tm_light_block) {
         Ok(lb) => lb,
-        Err(e) => return Err(e),
+        Err(e) => return Err(e.into()),
     };
 
     let mut validator_set_changed = match consensus_state.apply_light_block(&light_block) {
         Ok(validator_set_changed) => validator_set_changed,
-        Err(e) => return Err(e),
+        Err(e) => return Err(e.into()),
     };
     if !is_hertz {
         validator_set_changed = false;
@@ -89,10 +89,10 @@ fn cometbft_light_block_validation_run_inner(
 
     let consensus_state_bytes = match consensus_state.encode() {
         Ok(cs) => cs,
-        Err(e) => return Err(e),
+        Err(e) => return Err(e.into()),
     };
 
-    Ok((
+    Ok(PrecompileOutput::new(
         COMETBFT_LIGHT_BLOCK_VALIDATION_BASE,
         encode_light_block_validation_result(validator_set_changed, consensus_state_bytes),
     ))
@@ -429,12 +429,12 @@ mod tests {
             ));
 
             let result = cometbft_light_block_validation_run(&input, 100_000);
-            let (gas_used, output) = match result {
-                Ok(result) => result,
+            let PrecompileOutput { gas_used, bytes } = match result {
+                Ok(output) => output,
                 Err(_) => panic!("cometbft_light_block_validation_run failed"),
             };
             assert_eq!(gas_used, 3_000);
-            assert_eq!(output, except_output);
+            assert_eq!(bytes, except_output);
         }
         // apply light block failed
         {
@@ -443,7 +443,7 @@ mod tests {
             ));
 
             let result = cometbft_light_block_validation_run(&input, 100_000);
-            let expected = Err(Error::CometBftApplyBlockFailed);
+            let expected = Err(Error::CometBftApplyBlockFailed.into());
             assert_eq!(result, expected);
         }
         // consensus height >= light block height
@@ -453,7 +453,7 @@ mod tests {
             ));
 
             let result = cometbft_light_block_validation_run(&input, 100_000);
-            let expected = Err(Error::CometBftInvalidInput);
+            let expected = Err(Error::CometBftInvalidInput.into());
             assert_eq!(result, expected);
         }
         // chain id mismatch
@@ -463,7 +463,7 @@ mod tests {
             ));
 
             let result = cometbft_light_block_validation_run(&input, 100_000);
-            let expected = Err(Error::CometBftInvalidInput);
+            let expected = Err(Error::CometBftInvalidInput.into());
             assert_eq!(result, expected);
         }
     }
@@ -732,11 +732,11 @@ mod tests {
         ));
 
         let result = cometbft_light_block_validation_run_before_hertz(&input, 100_000);
-        let (gas_used, output) = match result {
-            Ok(result) => result,
+        let PrecompileOutput { gas_used, bytes } = match result {
+            Ok(output) => output,
             Err(_) => panic!("cometbft_light_block_validation_run failed"),
         };
         assert_eq!(gas_used, 3_000);
-        assert_eq!(output, except_output_after_hertz);
+        assert_eq!(bytes, except_output_after_hertz);
     }
 }

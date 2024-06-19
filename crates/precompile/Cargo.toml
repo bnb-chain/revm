@@ -21,6 +21,12 @@ rust_2018_idioms = "deny"
 all = "warn"
 
 [dependencies]
+alloy-rlp = { version = "0.3.4", default-features = false, features = [
+    "arrayvec",
+    "derive",
+] }
+alloy-primitives = {version = "0.7.2"}
+
 revm-primitives = { path = "../primitives", version = "4.0.0", default-features = false }
 once_cell = { version = "1.19", default-features = false, features = ["alloc"] }
 
@@ -40,11 +46,6 @@ prost = { version = "0.12.3" }
 bls_on_arkworks = "0.3.0"
 tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", tag = "v0.1.0-beta.1", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
-alloy-rlp = { version = "0.3", default-features = false, features = [
-    "arrayvec",
-    "derive",
-] }
-alloy-primitives = {version = "0.7.0"}
 
 # SHA2-256 and RIPEMD-160
 sha2 = { version = "0.10", default-features = false }

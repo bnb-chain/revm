@@ -1,4 +1,5 @@
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
+use revm_primitives::PrecompileOutput;
 use secp256k1::{ecdsa, Message, PublicKey};
 use tendermint::{account, public_key};
 
@@ -23,19 +24,19 @@ fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> Precompi
     const TM_SECP256K1_SIGNATURE_RECOVER_BASE: u64 = 3_000;
 
     if TM_SECP256K1_SIGNATURE_RECOVER_BASE > gas_limit {
-        return Err(Error::OutOfGas);
+        return Err(Error::OutOfGas.into());
     }
 
     let input_length = input.len();
     if input_length
         != SECP256K1_PUBKEY_LENGTH + SECP256K1_SIGNATURE_LENGTH + SECP256K1_SIGNATURE_MSGHASH_LENGTH
     {
-        return Err(PrecompileError::other("invalid input"));
+        return Err(PrecompileError::other("invalid input").into());
     }
 
     let public_key = match PublicKey::from_slice(&input[..SECP256K1_PUBKEY_LENGTH]) {
         Ok(pk) => pk,
-        Err(_) => return Err(PrecompileError::other("invalid pubkey")),
+        Err(_) => return Err(PrecompileError::other("invalid pubkey").into()),
     };
 
     let message = Message::from_digest(
@@ -48,22 +49,22 @@ fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> Precompi
         &input[SECP256K1_PUBKEY_LENGTH..SECP256K1_PUBKEY_LENGTH + SECP256K1_SIGNATURE_LENGTH],
     ) {
         Ok(s) => s,
-        Err(_) => return Err(PrecompileError::other("invalid signature")),
+        Err(_) => return Err(PrecompileError::other("invalid signature").into()),
     };
 
     let res = sig.verify(&message, &public_key).is_ok();
 
     if !res {
-        return Err(PrecompileError::other("invalid signature"));
+        return Err(PrecompileError::other("invalid signature").into());
     }
 
     let tm_pub_key =
         match public_key::PublicKey::from_raw_secp256k1(&input[..SECP256K1_PUBKEY_LENGTH]) {
             Some(pk) => pk,
-            None => return Err(PrecompileError::other("invalid pubkey")),
+            None => return Err(PrecompileError::other("invalid pubkey").into()),
         };
 
-    return Ok((
+    return Ok(PrecompileOutput::new(
         TM_SECP256K1_SIGNATURE_RECOVER_BASE,
         Bytes::copy_from_slice(account::Id::from(tm_pub_key).as_bytes()),
     ));
@@ -94,10 +95,10 @@ mod tests {
         let input = revm_primitives::Bytes::copy_from_slice(&input);
         let res = tm_secp256k1_signature_recover_run(&input, 3_000u64).unwrap();
 
-        let gas = res.0;
+        let gas = res.gas_used;
         assert_eq!(gas, 3_000u64);
 
-        let res = res.1;
+        let res = res.bytes;
         assert_eq!(res, Bytes::from(expect_address));
     }
 
@@ -121,10 +122,10 @@ mod tests {
         let input = revm_primitives::Bytes::copy_from_slice(&input);
         let res = tm_secp256k1_signature_recover_run(&input, 3_000u64).unwrap();
 
-        let gas = res.0;
+        let gas = res.gas_used;
         assert_eq!(gas, 3_000u64);
 
-        let res = res.1;
+        let res = res.bytes;
         assert_eq!(res, Bytes::from(expect_address));
     }
 }
