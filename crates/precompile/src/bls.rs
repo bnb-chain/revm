@@ -1,6 +1,6 @@
 use crate::{Error, Precompile, PrecompileResult, PrecompileWithAddress};
 use bls_on_arkworks as bls;
-use revm_primitives::Bytes;
+use revm_primitives::{Bytes, PrecompileOutput};
 use std::vec::Vec;
 
 pub(crate) const BLS_SIGNATURE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
@@ -21,7 +21,7 @@ const BLS_DST: &[u8] = bls::DST_ETHEREUM.as_bytes();
 fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     let cost = calc_gas_cost(input);
     if cost > gas_limit {
-        return Err(Error::OutOfGas);
+        return Err(Error::OutOfGas.into());
     }
 
     let msg_and_sig_length = BLS_MSG_HASH_LENGTH + BLS_SIGNATURE_LENGTH;
@@ -29,7 +29,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     if (input_length <= msg_and_sig_length)
         || ((input_length - msg_and_sig_length) % BLS_SINGLE_PUBKEY_LENGTH != 0)
     {
-        return Err(Error::Reverted(cost));
+        return Err(Error::Reverted(cost).into());
     }
 
     let msg_hash: &Vec<u8> = &input[..BLS_MSG_HASH_LENGTH as usize].to_vec();
@@ -38,7 +38,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
 
     // check signature format
     if bls::signature_to_point(&signature.to_vec()).is_err() {
-        return Err(Error::Reverted(cost));
+        return Err(Error::Reverted(cost).into());
     }
 
     let pub_key_count = (input_length - msg_and_sig_length) / BLS_SINGLE_PUBKEY_LENGTH;
@@ -50,13 +50,13 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
         let pub_key = &pub_keys_data[i as usize * BLS_SINGLE_PUBKEY_LENGTH as usize
             ..(i + 1) as usize * BLS_SINGLE_PUBKEY_LENGTH as usize];
         if !bls::key_validate(&pub_key.to_vec()) {
-            return Err(Error::Reverted(cost));
+            return Err(Error::Reverted(cost).into());
         }
         pub_keys.push(pub_key.to_vec());
         msg_hashes.push(msg_hash.clone().to_vec());
     }
     if pub_keys.is_empty() {
-        return Err(Error::Reverted(cost));
+        return Err(Error::Reverted(cost).into());
     }
 
     // verify signature
@@ -67,7 +67,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
         output = Bytes::from(vec![0]);
     }
 
-    Ok((cost, output))
+    Ok(PrecompileOutput::new(cost, output))
 }
 
 fn calc_gas_cost(input: &Bytes) -> u64 {
@@ -104,7 +104,7 @@ mod tests {
 
         let excepted_output = Bytes::from(vec![1]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok((_, output)) => output,
+            Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
         };
         assert_eq!(result, excepted_output);
@@ -120,7 +120,7 @@ mod tests {
 
         let excepted_output = Bytes::from(vec![0]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok((_, output)) => output,
+            Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
         };
         assert_eq!(result, excepted_output);
@@ -136,7 +136,7 @@ mod tests {
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::Reverted(4500)),
+            Err(e) => assert_eq!(e, Error::Reverted(4500).into()),
         }
 
         // wrong pubkey
@@ -150,7 +150,7 @@ mod tests {
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::Reverted(4500)),
+            Err(e) => assert_eq!(e, Error::Reverted(4500).into()),
         }
     }
 
@@ -170,7 +170,7 @@ mod tests {
 
         let excepted_output = Bytes::from(vec![1]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok((_, output)) => output,
+            Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
         };
         assert_eq!(result, excepted_output);
@@ -188,10 +188,11 @@ mod tests {
         input.extend_from_slice(&pub_key2);
         input.extend_from_slice(&pub_key3);
         let excepted_output = Bytes::from(vec![0]);
-        match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok((_, output)) => assert_eq!(output, excepted_output),
+        let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
+            Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
-        }
+        };
+        assert_eq!(result, excepted_output);
 
         // wrong signature
         let msg_hash = hex!("1377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb");
@@ -208,7 +209,7 @@ mod tests {
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::Reverted(11500)),
+            Err(e) => assert_eq!(e, Error::Reverted(11500).into()),
         }
 
         // invalid pubkey
@@ -226,7 +227,7 @@ mod tests {
 
         match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(_) => panic!("BLS signature validation failed, expect error"),
-            Err(e) => assert_eq!(e, Error::Reverted(11500)),
+            Err(e) => assert_eq!(e, Error::Reverted(11500).into()),
         }
 
         // duplicate pubkey
@@ -242,9 +243,10 @@ mod tests {
         input.extend_from_slice(&pub_key2);
         input.extend_from_slice(&pub_key3);
         let excepted_output = Bytes::from(vec![0]);
-        match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
-            Ok((_, output)) => assert_eq!(output, excepted_output),
+        let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
+            Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
-        }
+        };
+        assert_eq!(result, excepted_output);
     }
 }
