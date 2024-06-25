@@ -9,7 +9,7 @@ use crate::{
     },
     Context, FrameResult,
 };
-use revm_interpreter::{gas, SuccessOrHalt};
+use revm_interpreter::{gas, InternalResult, SuccessOrHalt};
 use std::sync::Arc;
 
 pub const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
@@ -121,10 +121,11 @@ pub fn output<EXT, DB: Database>(
             reason,
             gas_used: final_gas_used,
         },
-        // Only two internal return flags.
+        // Only three internal return flags.
         flag @ (SuccessOrHalt::FatalExternalError
-        | SuccessOrHalt::InternalContinue
-        | SuccessOrHalt::InternalCallOrCreate) => {
+        | SuccessOrHalt::Internal(InternalResult::InternalContinue)
+        | SuccessOrHalt::Internal(InternalResult::InternalCallOrCreate)
+        | SuccessOrHalt::Internal(InternalResult::CreateInitCodeStartingEF00)) => {
             panic!(
                 "Encountered unexpected internal return flag: {:?} with instruction result: {:?}",
                 flag, instruction_result
