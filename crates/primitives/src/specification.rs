@@ -113,15 +113,15 @@ pub enum SpecId {
     FEYNMAN_FIX = 28,    // FeynmanFix                           timestamp(1713419340)
     CANCUN = 29,         // Cancun                               timestamp(1718863500)
     HABER = 30,          // Haber                                timestamp(1718863500)
+    HABER_FIX = 31,      // HaberFix                             timestamp(1720591588)
 
-    // TODO: or u8::MAX - n?
     /// Not enabled in bsc
-    DAO_FORK = 31,
-    ARROW_GLACIER = 32,
-    GRAY_GLACIER = 33,
-    MERGE = 34,
-    PRAGUE = 35,
-    PRAGUE_EOF = 36,
+    DAO_FORK = 100,
+    ARROW_GLACIER = 101,
+    GRAY_GLACIER = 102,
+    MERGE = 103,
+    PRAGUE = 104,
+    PRAGUE_EOF = 105,
     #[default]
     LATEST = u8::MAX,
 }
@@ -211,6 +211,8 @@ impl From<&str> for SpecId {
             "FeynmanFix" => SpecId::FEYNMAN_FIX,
             #[cfg(any(feature = "opbnb", feature = "bsc"))]
             "Haber" => SpecId::HABER,
+            #[cfg(feature = "bsc")]
+            "HaberFix" => SpecId::HABER_FIX,
             _ => Self::LATEST,
         }
     }
@@ -285,6 +287,8 @@ impl From<SpecId> for &'static str {
             SpecId::FEYNMAN_FIX => "FeynmanFix",
             #[cfg(any(feature = "opbnb", feature = "bsc"))]
             SpecId::HABER => "Haber",
+            #[cfg(feature = "bsc")]
+            SpecId::HABER_FIX => "HaberFix",
             SpecId::LATEST => "Latest",
         }
     }
@@ -642,7 +646,7 @@ macro_rules! spec_to_generic {
                 use $crate::PragueEofSpec as SPEC;
                 $e
             }
-            $crate::SpecId::HABER => {
+            $crate::SpecId::HABER | $crate::SpecId::HABER_FIX => {
                 use $crate::HaberSpec as SPEC;
                 $e
             }
@@ -740,6 +744,8 @@ mod tests {
         spec_to_generic!(FEYNMAN_FIX, assert_eq!(SPEC::SPEC_ID, FEYNMAN));
         #[cfg(feature = "bsc")]
         spec_to_generic!(HABER, assert_eq!(SPEC::SPEC_ID, HABER));
+        #[cfg(feature = "bsc")]
+        spec_to_generic!(HABER_FIX, assert_eq!(SPEC::SPEC_ID, HABER));
     }
 }
 
