@@ -68,10 +68,10 @@ pub enum SpecId {
     CANYON = 20,
     CANCUN = 21,
     ECOTONE = 22,
-    FJORD = 23,
-    PRAGUE = 24,
-    PRAGUE_EOF = 25,
-    HABER = 26,
+    HABER = 23,
+    FJORD = 24,
+    PRAGUE = 25,
+    PRAGUE_EOF = 26,
     #[default]
     LATEST = u8::MAX,
 }
@@ -527,10 +527,6 @@ macro_rules! spec_to_generic {
                 use $crate::EcotoneSpec as SPEC;
                 $e
             }
-            $crate::SpecId::FJORD => {
-                use $crate::FjordSpec as SPEC;
-                $e
-            }
             #[cfg(feature = "opbnb")]
             $crate::SpecId::FERMAT => {
                 use $crate::FermatSpec as SPEC;
@@ -539,6 +535,10 @@ macro_rules! spec_to_generic {
             #[cfg(feature = "opbnb")]
             $crate::SpecId::HABER => {
                 use $crate::HaberSpec as SPEC;
+                $e
+            }
+            $crate::SpecId::FJORD => {
+                use $crate::FjordSpec as SPEC;
                 $e
             }
         }
