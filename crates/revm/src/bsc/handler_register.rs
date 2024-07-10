@@ -1,5 +1,6 @@
 //! Handler related to BNB-Smart-chain
 
+use crate::primitives::KECCAK_EMPTY;
 use crate::{
     handler::register::EvmHandler,
     interpreter::Gas,
@@ -9,7 +10,7 @@ use crate::{
     },
     Context, FrameResult,
 };
-use revm_interpreter::{gas, InternalResult, SuccessOrHalt};
+use revm_interpreter::{gas, SuccessOrHalt};
 use std::sync::Arc;
 
 pub const SYSTEM_ADDRESS: Address = address!("fffffffffffffffffffffffffffffffffffffffe");
@@ -35,9 +36,20 @@ pub fn validate_initial_tx_gas<SPEC: Spec, DB: Database>(
     let input = &env.tx.data;
     let is_create = env.tx.transact_to.is_create();
     let access_list = &env.tx.access_list;
+    let authorization_list_num = env
+        .tx
+        .authorization_list
+        .as_ref()
+        .map(|l| l.len() as u64)
+        .unwrap_or_default();
 
-    let initial_gas_spend =
-        gas::validate_initial_tx_gas(SPEC::SPEC_ID, input, is_create, access_list);
+    let initial_gas_spend = gas::validate_initial_tx_gas(
+        SPEC::SPEC_ID,
+        input,
+        is_create,
+        access_list,
+        authorization_list_num,
+    );
 
     // Additional check to see if limit is big enough to cover initial gas.
     if initial_gas_spend > env.tx.gas_limit {
@@ -84,7 +96,7 @@ pub fn output<EXT, DB: Database>(
     context: &mut Context<EXT, DB>,
     result: FrameResult,
 ) -> Result<ResultAndState, EVMError<DB::Error>> {
-    core::mem::replace(&mut context.evm.error, Ok(()))?;
+    context.evm.take_error()?;
     // used gas with refund calculated.
     let gas_refunded = if context
         .evm
@@ -103,7 +115,17 @@ pub fn output<EXT, DB: Database>(
     let instruction_result = result.into_interpreter_result();
 
     // reset journal and return present state.
-    let (state, logs) = context.evm.journaled_state.finalize();
+    let (mut state, logs) = context.evm.journaled_state.finalize();
+
+    // clear code of authorized accounts.
+    for authorized in core::mem::take(&mut context.evm.inner.valid_authorizations).into_iter() {
+        let account = state
+            .get_mut(&authorized)
+            .expect("Authorized account must exist");
+        account.info.code = None;
+        account.info.code_hash = KECCAK_EMPTY;
+        account.storage.clear();
+    }
 
     let result = match instruction_result.result.into() {
         SuccessOrHalt::Success(reason) => ExecutionResult::Success {
@@ -121,11 +143,8 @@ pub fn output<EXT, DB: Database>(
             reason,
             gas_used: final_gas_used,
         },
-        // Only three internal return flags.
-        flag @ (SuccessOrHalt::FatalExternalError
-        | SuccessOrHalt::Internal(InternalResult::InternalContinue)
-        | SuccessOrHalt::Internal(InternalResult::InternalCallOrCreate)
-        | SuccessOrHalt::Internal(InternalResult::CreateInitCodeStartingEF00)) => {
+        // Only two internal return flags.
+        flag @ (SuccessOrHalt::FatalExternalError | SuccessOrHalt::Internal(_)) => {
             panic!(
                 "Encountered unexpected internal return flag: {:?} with instruction result: {:?}",
                 flag, instruction_result

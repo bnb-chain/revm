@@ -13,10 +13,10 @@ mod bls;
 #[cfg(feature = "blst")]
 pub mod bls12_381;
 pub mod bn128;
-pub mod fatal_precompile;
-pub mod hash;
 mod cometbft;
 mod double_sign;
+pub mod fatal_precompile;
+pub mod hash;
 mod iavl;
 pub mod identity;
 #[cfg(feature = "c-kzg")]
@@ -274,7 +274,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             #[cfg(feature = "bsc")]
-            let precompiles = Self::feynman().clone();
+            let mut precompiles = Self::feynman().clone();
             #[cfg(not(feature = "bsc"))]
             let mut precompiles = Self::berlin().clone();
 
