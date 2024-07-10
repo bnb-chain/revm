@@ -248,6 +248,7 @@ impl Interpreter {
     /// - `return_revert!()`: Handles a revert by only updating the gas usage and shared memory.
     /// - `InstructionResult::FatalExternalError`: Sets the instruction result to a fatal external error.
     /// - Any other result: No specific action is taken.
+    #[allow(clippy::assigning_clones)]
     pub fn insert_call_outcome(
         &mut self,
         shared_memory: &mut SharedMemory,

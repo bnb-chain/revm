@@ -237,6 +237,7 @@ fn check_evm_execution<EXT>(
     Ok(())
 }
 
+#[allow(clippy::assigning_clones)]
 pub fn execute_test_suite(
     path: &Path,
     elapsed: &Arc<Mutex<Duration>>,

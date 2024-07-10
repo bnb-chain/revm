@@ -14,6 +14,8 @@ mod context;
 #[cfg(any(test, feature = "test-utils"))]
 pub mod test_utils;
 
+#[cfg(feature = "bsc")]
+pub mod bsc;
 pub mod db;
 mod evm;
 mod frame;

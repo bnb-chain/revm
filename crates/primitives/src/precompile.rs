@@ -174,8 +174,18 @@ pub enum PrecompileError {
     BlobMismatchedVersion,
     /// The proof verification failed.
     BlobVerifyKzgProofFailed,
+    /// The cometbft validation input is invalid.
+    CometBftInvalidInput,
+    /// The cometbft apply block failed.
+    CometBftApplyBlockFailed,
+    /// The cometbft consensus state encoding failed.
+    CometBftEncodeConsensusStateFailed,
     /// Catch-all variant for other errors.
     Other(String),
+    /// Reverted error
+    /// This is for BSC EVM compatibility specially.
+    /// This error will not consume all gas but only the returned amount.
+    Reverted(u64),
 }
 
 impl PrecompileError {
@@ -187,6 +197,11 @@ impl PrecompileError {
     /// Returns true if the error is out of gas.
     pub fn is_oog(&self) -> bool {
         matches!(self, Self::OutOfGas)
+    }
+
+    /// Returns true if the error is reverted
+    pub fn is_reverted(&self) -> bool {
+        matches!(self, Self::Reverted(_))
     }
 }
 
@@ -214,7 +229,11 @@ impl fmt::Display for PrecompileError {
             Self::BlobInvalidInputLength => "invalid blob input length",
             Self::BlobMismatchedVersion => "mismatched blob version",
             Self::BlobVerifyKzgProofFailed => "verifying blob kzg proof failed",
+            Self::CometBftInvalidInput => "invalid cometbft light block validation input",
+            Self::CometBftApplyBlockFailed => "failed to apply cometbft block",
+            Self::CometBftEncodeConsensusStateFailed => "failed to encode cometbft consensus state",
             Self::Other(s) => s,
+            Self::Reverted(_) => "execution reverted",
         };
         f.write_str(s)
     }

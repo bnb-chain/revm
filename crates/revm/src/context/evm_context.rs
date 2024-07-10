@@ -133,6 +133,16 @@ impl<DB: Database> EvmContext<DB> {
             Err(PrecompileErrors::Error(e)) => {
                 result.result = if e.is_oog() {
                     InstructionResult::PrecompileOOG
+                } else if e.is_reverted() {
+                    // for BSC compatibility
+                    let crate::precompile::Error::Reverted(gas_used) = e else {
+                        panic!("cannot happen")
+                    };
+                    if result.gas.record_cost(gas_used) {
+                        InstructionResult::Revert
+                    } else {
+                        InstructionResult::PrecompileOOG
+                    }
                 } else {
                     InstructionResult::PrecompileError
                 };

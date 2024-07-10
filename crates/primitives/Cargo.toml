@@ -80,6 +80,7 @@ arbitrary = [
 asm-keccak = ["alloy-primitives/asm-keccak"]
 portable = ["c-kzg?/portable"]
 
+bsc = []
 optimism = []
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = ["optimism"]
@@ -105,3 +106,7 @@ rand = ["alloy-primitives/rand"]
 
 # See comments in `revm-precompile`
 c-kzg = ["dep:c-kzg", "dep:once_cell", "dep:derive_more"]
+
+opbnb = []
+opbnb-default-handler = ["opbnb"]
+negate-opbnb-default-handler = []
