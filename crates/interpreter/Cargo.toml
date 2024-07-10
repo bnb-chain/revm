@@ -90,3 +90,5 @@ opbnb-default-handler = [
 negate-opbnb-default-handler = [
     "revm-primitives/negate-opbnb-default-handler",
 ]
+
+kzg-rs = ["revm-primitives/kzg-rs"]
