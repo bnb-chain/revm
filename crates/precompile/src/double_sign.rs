@@ -1,9 +1,8 @@
 use crate::secp256k1;
 use crate::{Bytes, Error, Precompile, PrecompileResult, PrecompileWithAddress};
-use alloy_primitives::{BlockNumber, ChainId, U256};
 use alloy_rlp::{Decodable, RlpDecodable, RlpEncodable};
 use core::cmp::Ordering;
-use revm_primitives::alloy_primitives::B512;
+use revm_primitives::alloy_primitives::{BlockNumber, ChainId, B512, U256};
 use revm_primitives::{keccak256, PrecompileOutput, B256};
 
 /// Double sign evidence validation precompile for BSC.

@@ -7,7 +7,7 @@ use crate::{
     interpreter::{
         return_ok, CallInputs, Contract, Gas, InstructionResult, Interpreter, InterpreterResult,
     },
-    primitives::{Address, Bytes, EVMError, Env, U256},
+    primitives::{Address, Bytes, EVMError, Env, EOF_MAGIC_BYTES, U256},
     ContextPrecompiles, FrameOrResult, CALL_STACK_LIMIT,
 };
 use core::{
@@ -180,8 +180,16 @@ impl<DB: Database> EvmContext<DB> {
             .inner
             .journaled_state
             .load_code(inputs.bytecode_address, &mut self.inner.db)?;
+
         let code_hash = account.info.code_hash();
         let bytecode = account.info.code.clone().unwrap_or_default();
+
+        // ExtDelegateCall is not allowed to call non-EOF contracts.
+        if inputs.scheme.is_ext_delegate_call()
+            && bytecode.bytes_slice().get(..2) != Some(&EOF_MAGIC_BYTES)
+        {
+            return return_result(InstructionResult::InvalidExtDelegateCallTarget);
+        }
 
         // Create subroutine checkpoint
         let checkpoint = self.journaled_state.checkpoint();
@@ -294,6 +302,7 @@ pub(crate) mod test_utils {
                 journaled_state: JournaledState::new(SpecId::CANCUN, HashSet::new()),
                 db,
                 error: Ok(()),
+                valid_authorizations: Vec::new(),
                 #[cfg(feature = "optimism")]
                 l1_block_info: None,
             },
@@ -309,6 +318,7 @@ pub(crate) mod test_utils {
                 journaled_state: JournaledState::new(SpecId::CANCUN, HashSet::new()),
                 db,
                 error: Ok(()),
+                valid_authorizations: Default::default(),
                 #[cfg(feature = "optimism")]
                 l1_block_info: None,
             },

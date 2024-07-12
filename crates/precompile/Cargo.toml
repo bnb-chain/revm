@@ -6,7 +6,8 @@ keywords = ["no_std", "ethereum", "evm", "revm", "precompiles"]
 license = "MIT"
 name = "revm-precompile"
 repository = "https://github.com/bluealloy/revm"
-version = "8.0.0"
+version = "9.0.0"
+readme = "../../README.md"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -21,13 +22,12 @@ rust_2018_idioms = "deny"
 all = "warn"
 
 [dependencies]
-alloy-rlp = { version = "0.3.4", default-features = false, features = [
+alloy-rlp = { version = "0.3.7", default-features = false, features = [
     "arrayvec",
     "derive",
 ] }
-alloy-primitives = {version = "0.7.2"}
 
-revm-primitives = { path = "../primitives", version = "5.0.0", default-features = false }
+revm-primitives = { path = "../primitives", version = "6.0.0", default-features = false }
 once_cell = { version = "1.19", default-features = false, features = ["alloc"] }
 
 # ecRecover
@@ -42,7 +42,7 @@ cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", re
 cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-prost = { version = "0.12.3" }
+prost = { version = "0.12.6" }
 bls_on_arkworks = "0.3.0"
 tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", tag = "v0.1.0-beta.1", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
@@ -68,6 +68,9 @@ p256 = { version = "0.13.2", optional = true, default-features = false, features
     "ecdsa",
 ] }
 
+# utils
+cfg-if = { version = "1.0", default-features = false }
+
 [dev-dependencies]
 criterion = "0.5"
 rand = { version = "0.8", features = ["std"] }
@@ -92,6 +95,7 @@ hashbrown = ["revm-primitives/hashbrown"]
 asm-keccak = ["revm-primitives/asm-keccak"]
 
 bsc = ["revm-primitives/bsc", "secp256k1", "secp256r1"]
+
 optimism = ["revm-primitives/optimism", "secp256r1"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
 optimism-default-handler = [
