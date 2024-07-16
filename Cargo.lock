@@ -6035,3 +6035,18 @@ dependencies = [
  "quote",
  "syn 2.0.66",
 ]
+
+[[patch.unused]]
+name = "alloy-eips"
+version = "0.1.4"
+source = "git+https://github.com/alloy-rs/alloy.git?rev=678617e#678617e1e4c9928b14c27477d8dd5aa25bb67f11"
+
+[[patch.unused]]
+name = "alloy-provider"
+version = "0.1.4"
+source = "git+https://github.com/alloy-rs/alloy.git?rev=678617e#678617e1e4c9928b14c27477d8dd5aa25bb67f11"
+
+[[patch.unused]]
+name = "alloy-transport"
+version = "0.1.4"
+source = "git+https://github.com/alloy-rs/alloy.git?rev=678617e#678617e1e4c9928b14c27477d8dd5aa25bb67f11"
