@@ -490,6 +490,8 @@ impl PrecompileSpecId {
             HABER => Self::HABER,
             #[cfg(feature = "bsc")]
             HABER_FIX => Self::HABER,
+            #[cfg(feature = "bsc")]
+            BOHR => Self::HABER,
             LATEST => Self::LATEST,
         }
     }
