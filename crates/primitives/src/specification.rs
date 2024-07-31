@@ -114,6 +114,7 @@ pub enum SpecId {
     CANCUN = 29,         // Cancun                               timestamp(1718863500)
     HABER = 30,          // Haber                                timestamp(1718863500)
     HABER_FIX = 31,      // HaberFix                             timestamp(1720591588)
+    BOHR = 32,           // Bohr                                 timestamp(1720591588)
 
     /// Not enabled in bsc
     DAO_FORK = 100,
@@ -213,6 +214,8 @@ impl From<&str> for SpecId {
             "Haber" => SpecId::HABER,
             #[cfg(feature = "bsc")]
             "HaberFix" => SpecId::HABER_FIX,
+            #[cfg(feature = "bsc")]
+            "Bohr" => SpecId::BOHR,
             _ => Self::LATEST,
         }
     }
@@ -289,6 +292,8 @@ impl From<SpecId> for &'static str {
             SpecId::HABER => "Haber",
             #[cfg(feature = "bsc")]
             SpecId::HABER_FIX => "HaberFix",
+            #[cfg(feature = "bsc")]
+            SpecId::BOHR => "Bohr",
             SpecId::LATEST => "Latest",
         }
     }
@@ -646,7 +651,7 @@ macro_rules! spec_to_generic {
                 use $crate::PragueEofSpec as SPEC;
                 $e
             }
-            $crate::SpecId::HABER | $crate::SpecId::HABER_FIX => {
+            $crate::SpecId::HABER | $crate::SpecId::HABER_FIX | $crate::SpecId::BOHR => {
                 use $crate::HaberSpec as SPEC;
                 $e
             }
