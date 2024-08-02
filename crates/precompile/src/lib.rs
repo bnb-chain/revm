@@ -46,6 +46,7 @@ use cfg_if::cfg_if;
 use core::hash::Hash;
 use once_cell::race::OnceBox;
 use std::{boxed::Box, vec::Vec};
+use revm_primitives::WRIGHT;
 
 pub fn calc_linear_cost_u32(len: usize, base: u64, word: u64) -> u64 {
     (len as u64 + 32 - 1) / 32 * word + base
@@ -490,7 +491,9 @@ impl PrecompileSpecId {
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
-            HABER | WRIGHT => Self::HABER,
+            HABER => Self::HABER,
+            #[cfg(feature = "opbnb")]
+            WRIGHT => Self::HABER,
             #[cfg(feature = "bsc")]
             HABER_FIX => Self::HABER,
             #[cfg(feature = "bsc")]
