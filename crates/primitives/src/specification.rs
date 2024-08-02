@@ -69,9 +69,10 @@ pub enum SpecId {
     CANCUN = 21,
     ECOTONE = 22,
     HABER = 23,
-    FJORD = 24,
-    PRAGUE = 25,
-    PRAGUE_EOF = 26,
+    WRIGHT = 24,
+    FJORD = 25,
+    PRAGUE = 26,
+    PRAGUE_EOF = 27,
     #[default]
     LATEST = u8::MAX,
 }
@@ -216,6 +217,8 @@ impl From<&str> for SpecId {
             "HaberFix" => SpecId::HABER_FIX,
             #[cfg(feature = "bsc")]
             "Bohr" => SpecId::BOHR,
+            #[cfg(feature = "opbnb")]
+            "Wright" => SpecId::WRIGHT,
             _ => Self::LATEST,
         }
     }
@@ -290,6 +293,8 @@ impl From<SpecId> for &'static str {
             SpecId::FEYNMAN_FIX => "FeynmanFix",
             #[cfg(any(feature = "opbnb", feature = "bsc"))]
             SpecId::HABER => "Haber",
+            #[cfg(feature = "opbnb")]
+            SpecId::WRIGHT => "Wright",
             #[cfg(feature = "bsc")]
             SpecId::HABER_FIX => "HaberFix",
             #[cfg(feature = "bsc")]
@@ -377,7 +382,8 @@ spec!(ECOTONE, EcotoneSpec);
 spec!(FJORD, FjordSpec);
 #[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
-
+#[cfg(feature = "opbnb")]
+spec!(WRIGHT, WrightSpec);
 #[cfg(all(not(feature = "optimism"), not(feature = "bsc")))]
 #[macro_export]
 macro_rules! spec_to_generic {
@@ -540,6 +546,11 @@ macro_rules! spec_to_generic {
             #[cfg(feature = "opbnb")]
             $crate::SpecId::HABER => {
                 use $crate::HaberSpec as SPEC;
+                $e
+            }
+            #[cfg(feature = "opbnb")]
+            $crate::SpecId::WRIGHT => {
+                use $crate::WrightSpec as SPEC;
                 $e
             }
             $crate::SpecId::FJORD => {

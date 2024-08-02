@@ -18,6 +18,7 @@ use core::ops::Mul;
 use revm_precompile::{secp256r1, PrecompileSpecId};
 use std::string::ToString;
 use std::sync::Arc;
+use crate::primitives::WRIGHT;
 
 pub fn optimism_handle_register<DB: Database, EXT>(handler: &mut EvmHandler<'_, EXT, DB>) {
     spec_to_generic!(handler.cfg.spec_id, {
@@ -211,13 +212,18 @@ pub fn deduct_caller<SPEC: Spec, EXT, DB: Database>(
             ));
         };
 
-        let tx_l1_cost = context
-            .evm
-            .inner
-            .l1_block_info
-            .as_ref()
-            .expect("L1BlockInfo should be loaded")
-            .calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+        let tx_l1_cost = if context.evm.inner.env.tx.gas_price.is_zero() && SPEC::enabled(WRIGHT) {
+            U256::ZERO
+        } else {
+            context
+                .evm
+                .inner
+                .l1_block_info
+                .as_ref()
+                .expect("L1BlockInfo should be loaded")
+                .calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID)
+        };
+
         if tx_l1_cost.gt(&caller_account.info.balance) {
             return Err(EVMError::Transaction(
                 InvalidTransaction::LackOfFundForMaxFee {
@@ -259,7 +265,11 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
             ));
         };
 
-        let l1_cost = l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+        let l1_cost = if context.evm.inner.env.tx.gas_price.is_zero() && SPEC::enabled(WRIGHT) {
+            U256::ZERO
+        } else {
+            l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID)
+        };
 
         // Send the L1 cost of the transaction to the L1 Fee Vault.
         let (l1_fee_vault_account, _) = context
