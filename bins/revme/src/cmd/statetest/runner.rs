@@ -9,8 +9,8 @@ use revm::{
     inspector_handle_register,
     inspectors::TracerEip3155,
     primitives::{
-        calc_excess_blob_gas, keccak256, Bytecode, Bytes, EVMResultGeneric, Env, Eof,
-        ExecutionResult, SpecId, TxKind, B256, EOF_MAGIC_BYTES,
+        calc_excess_blob_gas, keccak256, Bytecode, Bytes, EVMResultGeneric, Env, ExecutionResult,
+        SpecId, TxKind, B256,
     },
     Evm, State,
 };
@@ -259,12 +259,7 @@ pub fn execute_test_suite(
         let mut cache_state = revm::CacheState::new(false);
         for (address, info) in unit.pre {
             let code_hash = keccak256(&info.code);
-            let bytecode = match info.code.get(..2) {
-                Some(magic) if magic == &EOF_MAGIC_BYTES => {
-                    Bytecode::Eof(Eof::decode(info.code.clone()).unwrap().into())
-                }
-                _ => Bytecode::new_raw(info.code),
-            };
+            let bytecode = Bytecode::new_raw(info.code);
             let acc_info = revm::primitives::AccountInfo {
                 balance: info.balance,
                 code_hash,
@@ -324,12 +319,10 @@ pub fn execute_test_suite(
 
         // post and execution
         for (spec_name, tests) in unit.post {
-            if matches!(
-                spec_name,
-                SpecName::ByzantiumToConstantinopleAt5
-                    | SpecName::Constantinople
-                    | SpecName::Unknown
-            ) {
+            // Constantinople was immediately extended by Petersburg.
+            // There isn't any production Constantinople transaction
+            // so we don't support it and skip right to Petersburg.
+            if spec_name == SpecName::Constantinople {
                 continue;
             }
 
@@ -353,6 +346,10 @@ pub fn execute_test_suite(
                     .and_then(Option::as_deref)
                     .cloned()
                     .unwrap_or_default();
+                let Ok(auth_list) = test.eip7702_authorization_list() else {
+                    continue;
+                };
+                env.tx.authorization_list = auth_list;
 
                 let to = match unit.transaction.to {
                     Some(add) => TxKind::Call(add),
