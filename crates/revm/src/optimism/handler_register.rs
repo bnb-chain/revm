@@ -10,7 +10,7 @@ use crate::{
     primitives::{
         db::Database, spec_to_generic, Account, EVMError, Env, ExecutionResult, HaltReason,
         HashMap, InvalidTransaction, OptimismInvalidTransaction, ResultAndState, Spec, SpecId,
-        SpecId::REGOLITH, U256,
+        SpecId::REGOLITH, SpecId::WRIGHT, U256,
     },
     Context, ContextPrecompiles, FrameResult,
 };
@@ -211,13 +211,18 @@ pub fn deduct_caller<SPEC: Spec, EXT, DB: Database>(
             ));
         };
 
-        let tx_l1_cost = context
-            .evm
-            .inner
-            .l1_block_info
-            .as_ref()
-            .expect("L1BlockInfo should be loaded")
-            .calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+        let tx_l1_cost = if context.evm.inner.env.tx.gas_price.is_zero() && SPEC::enabled(WRIGHT) {
+            U256::ZERO
+        } else {
+            context
+                .evm
+                .inner
+                .l1_block_info
+                .as_ref()
+                .expect("L1BlockInfo should be loaded")
+                .calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID)
+        };
+
         if tx_l1_cost.gt(&caller_account.info.balance) {
             return Err(EVMError::Transaction(
                 InvalidTransaction::LackOfFundForMaxFee {
@@ -259,7 +264,11 @@ pub fn reward_beneficiary<SPEC: Spec, EXT, DB: Database>(
             ));
         };
 
-        let l1_cost = l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID);
+        let l1_cost = if context.evm.inner.env.tx.gas_price.is_zero() && SPEC::enabled(WRIGHT) {
+            U256::ZERO
+        } else {
+            l1_block_info.calculate_tx_l1_cost(enveloped_tx, SPEC::SPEC_ID)
+        };
 
         // Send the L1 cost of the transaction to the L1 Fee Vault.
         let (l1_fee_vault_account, _) = context

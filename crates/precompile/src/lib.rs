@@ -491,6 +491,8 @@ impl PrecompileSpecId {
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
             HABER => Self::HABER,
+            #[cfg(feature = "opbnb")]
+            WRIGHT => Self::HABER,
             #[cfg(feature = "bsc")]
             HABER_FIX => Self::HABER,
             #[cfg(feature = "bsc")]
