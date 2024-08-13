@@ -350,7 +350,7 @@ impl<EXT, DB: Database> Evm<'_, EXT, DB> {
             TxKind::Create => {
                 // if first byte of data is magic 0xEF00, then it is EOFCreate.
                 if spec_id.is_enabled_in(SpecId::PRAGUE_EOF)
-                    && ctx.env().tx.data.get(0..2) == Some(&EOF_MAGIC_BYTES)
+                    && ctx.env().tx.data.starts_with(&EOF_MAGIC_BYTES)
                 {
                     exec.eofcreate(
                         ctx,
@@ -365,7 +365,6 @@ impl<EXT, DB: Database> Evm<'_, EXT, DB> {
                 }
             }
         };
-
         // Starts the main running loop.
         let mut result = match first_frame_or_result {
             FrameOrResult::Frame(first_frame) => self.run_the_loop(first_frame)?,
