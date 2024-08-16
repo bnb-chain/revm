@@ -64,6 +64,17 @@ pub fn collect_system_reward<SPEC: Spec, EXT, DB: Database>(
     context: &mut Context<EXT, DB>,
     gas: &Gas,
 ) -> Result<(), EVMError<DB::Error>> {
+    if context
+        .evm
+        .env
+        .tx
+        .bsc
+        .is_system_transaction
+        .unwrap_or(false)
+    {
+        return Ok(());
+    }
+
     let effective_gas_price = context.evm.env.effective_gas_price();
     let mut tx_fee = U256::from(gas.spent() - gas.refunded() as u64) * effective_gas_price;
 
