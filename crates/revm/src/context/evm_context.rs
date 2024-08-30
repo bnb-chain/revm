@@ -11,7 +11,7 @@ use crate::{
     primitives::{
         keccak256, Address, Bytecode, Bytes, CreateScheme, EVMError, Env, Eof,
         SpecId::{self, *},
-        B256, EOF_MAGIC_BYTES, U256,
+        B256, EOF_MAGIC_BYTES,
     },
     ContextPrecompiles, FrameOrResult, CALL_STACK_LIMIT,
 };
@@ -187,7 +187,7 @@ impl<DB: Database> EvmContext<DB> {
         let _ = self
             .inner
             .journaled_state
-            .load_account(inputs.bytecode_address, &mut self.inner.db)?;
+            .load_account_delegated(inputs.bytecode_address, &mut self.inner.db)?;
 
         // Create subroutine checkpoint
         let checkpoint = self.journaled_state.checkpoint();
@@ -195,7 +195,7 @@ impl<DB: Database> EvmContext<DB> {
         // Touch address. For "EIP-158 State Clear", this will erase empty accounts.
         match inputs.value {
             // if transfer value is zero, load account and force the touch.
-            CallValue::Transfer(value) if value == U256::ZERO => {
+            CallValue::Transfer(value) if value.is_zero() => {
                 self.load_account(inputs.target_address)?;
                 self.journaled_state.touch(&inputs.target_address);
             }
@@ -226,17 +226,17 @@ impl<DB: Database> EvmContext<DB> {
                 inputs.return_memory_offset.clone(),
             ))
         } else {
-            let (account, _) = self
+            let account = self
                 .inner
                 .journaled_state
                 .load_code(inputs.bytecode_address, &mut self.inner.db)?;
 
             let code_hash = account.info.code_hash();
-            let bytecode = account.info.code.clone().unwrap_or_default();
+            let mut bytecode = account.info.code.clone().unwrap_or_default();
 
             // ExtDelegateCall is not allowed to call non-EOF contracts.
             if inputs.scheme.is_ext_delegate_call()
-                && bytecode.bytes_slice().get(..2) != Some(&EOF_MAGIC_BYTES)
+                && !bytecode.bytes_slice().starts_with(&EOF_MAGIC_BYTES)
             {
                 return return_result(InstructionResult::InvalidExtDelegateCallTarget);
             }
@@ -244,6 +244,17 @@ impl<DB: Database> EvmContext<DB> {
             if bytecode.is_empty() {
                 self.journaled_state.checkpoint_commit();
                 return return_result(InstructionResult::Stop);
+            }
+
+            if let Bytecode::Eip7702(eip7702_bytecode) = bytecode {
+                bytecode = self
+                    .inner
+                    .journaled_state
+                    .load_code(eip7702_bytecode.delegated_address, &mut self.inner.db)?
+                    .info
+                    .code
+                    .clone()
+                    .unwrap_or_default();
             }
 
             let contract =
@@ -281,16 +292,15 @@ impl<DB: Database> EvmContext<DB> {
         }
 
         // Prague EOF
-        if spec_id.is_enabled_in(PRAGUE_EOF) && inputs.init_code.get(..2) == Some(&EOF_MAGIC_BYTES)
-        {
+        if spec_id.is_enabled_in(PRAGUE_EOF) && inputs.init_code.starts_with(&EOF_MAGIC_BYTES) {
             return return_error(InstructionResult::CreateInitCodeStartingEF00);
         }
 
         // Fetch balance of caller.
-        let (caller_balance, _) = self.balance(inputs.caller)?;
+        let caller_balance = self.balance(inputs.caller)?;
 
         // Check if caller has enough balance to send to the created contract.
-        if caller_balance < inputs.value {
+        if caller_balance.data < inputs.value {
             return return_error(InstructionResult::OutOfFunds);
         }
 
@@ -378,12 +388,15 @@ impl<DB: Database> EvmContext<DB> {
             } => (input.clone(), initcode.clone(), Some(*created_address)),
             EOFCreateKind::Tx { initdata } => {
                 // decode eof and init code.
+                // TODO handle inc_nonce handling more gracefully.
                 let Ok((eof, input)) = Eof::decode_dangling(initdata.clone()) else {
+                    self.journaled_state.inc_nonce(inputs.caller);
                     return return_error(InstructionResult::InvalidEOFInitCode);
                 };
 
                 if validate_eof(&eof).is_err() {
                     // TODO (EOF) new error type.
+                    self.journaled_state.inc_nonce(inputs.caller);
                     return return_error(InstructionResult::InvalidEOFInitCode);
                 }
 
@@ -405,10 +418,10 @@ impl<DB: Database> EvmContext<DB> {
         }
 
         // Fetch balance of caller.
-        let (caller_balance, _) = self.balance(inputs.caller)?;
+        let caller_balance = self.balance(inputs.caller)?;
 
         // Check if caller has enough balance to send to the created contract.
-        if caller_balance < inputs.value {
+        if caller_balance.data < inputs.value {
             return return_error(InstructionResult::OutOfFunds);
         }
 
@@ -469,6 +482,7 @@ impl<DB: Database> EvmContext<DB> {
 #[cfg(any(test, feature = "test-utils"))]
 pub(crate) mod test_utils {
     use super::*;
+    use crate::primitives::U256;
     use crate::{
         db::{CacheDB, EmptyDB},
         journaled_state::JournaledState,
@@ -525,7 +539,6 @@ pub(crate) mod test_utils {
                 journaled_state: JournaledState::new(SpecId::CANCUN, HashSet::new()),
                 db,
                 error: Ok(()),
-                valid_authorizations: Vec::new(),
                 #[cfg(feature = "optimism")]
                 l1_block_info: None,
             },
@@ -541,7 +554,6 @@ pub(crate) mod test_utils {
                 journaled_state: JournaledState::new(SpecId::CANCUN, HashSet::new()),
                 db,
                 error: Ok(()),
-                valid_authorizations: Default::default(),
                 #[cfg(feature = "optimism")]
                 l1_block_info: None,
             },
@@ -553,6 +565,7 @@ pub(crate) mod test_utils {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::primitives::U256;
     use crate::{
         db::{CacheDB, EmptyDB},
         primitives::{address, Bytecode},
