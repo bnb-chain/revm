@@ -44,7 +44,7 @@ cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.g
 cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 prost = { version = "0.12.6" }
 bls_on_arkworks = "0.3.0"
-tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", tag = "v0.1.0-beta.1", features = ["secp256k1"] }
+tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "8c21ccbd58a174e07eed2c9343e63ccd00f0fbd5", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
 
 # SHA2-256 and RIPEMD-160

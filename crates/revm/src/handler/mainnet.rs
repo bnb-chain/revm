@@ -6,7 +6,6 @@ mod pre_execution;
 mod validation;
 
 // Public exports
-
 pub use execution::{
     call, call_return, create, create_return, eofcreate, eofcreate_return, execute_frame,
     insert_call_outcome, insert_create_outcome, insert_eofcreate_outcome, last_frame_return,
