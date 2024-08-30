@@ -64,7 +64,7 @@ fn bls_signature_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResu
     if (pub_keys.len() == 1 && !bls::verify(&pub_keys[0], msg_hash, signature, &BLS_DST.to_vec()))
         || !bls::aggregate_verify(pub_keys, msg_hashes, signature, &BLS_DST.to_vec())
     {
-        output = Bytes::from(vec![0]);
+        output = Bytes::from(vec![]);
     }
 
     Ok(PrecompileOutput::new(cost, output))
@@ -118,7 +118,7 @@ mod tests {
         input.extend_from_slice(&signature);
         input.extend_from_slice(&pub_key);
 
-        let excepted_output = Bytes::from(vec![0]);
+        let excepted_output = Bytes::from(vec![]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
@@ -187,7 +187,7 @@ mod tests {
         input.extend_from_slice(&pub_key1);
         input.extend_from_slice(&pub_key2);
         input.extend_from_slice(&pub_key3);
-        let excepted_output = Bytes::from(vec![0]);
+        let excepted_output = Bytes::from(vec![]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
@@ -242,7 +242,7 @@ mod tests {
         input.extend_from_slice(&pub_key1);
         input.extend_from_slice(&pub_key2);
         input.extend_from_slice(&pub_key3);
-        let excepted_output = Bytes::from(vec![0]);
+        let excepted_output = Bytes::from(vec![]);
         let result = match bls_signature_validation_run(&Bytes::from(input.clone()), 100_000_000) {
             Ok(o) => o.bytes,
             Err(e) => panic!("BLS signature validation failed, {:?}", e),
