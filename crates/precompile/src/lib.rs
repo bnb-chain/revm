@@ -486,13 +486,15 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(feature = "optimism")]
-            ECOTONE | FJORD => Self::CANCUN,
+            ECOTONE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
             HABER => Self::HABER,
             #[cfg(feature = "opbnb")]
             WRIGHT => Self::HABER,
+            #[cfg(feature = "opbnb")]
+            FJORD => Self::HABER,
             #[cfg(feature = "bsc")]
             HABER_FIX => Self::HABER,
             #[cfg(feature = "bsc")]
