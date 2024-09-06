@@ -199,7 +199,7 @@ impl<EXT, DB: Database> Evm<'_, EXT, DB> {
             .handler
             .validation()
             .initial_tx_gas(&self.context.evm.env)
-            .inspect_err(|e| {
+            .inspect_err(|_| {
                 self.clear();
             })?;
         let output = self.transact_preverified_inner(initial_gas_spend);
@@ -227,7 +227,7 @@ impl<EXT, DB: Database> Evm<'_, EXT, DB> {
     /// This function will validate the transaction.
     #[inline]
     pub fn transact(&mut self) -> EVMResult<DB::Error> {
-        let initial_gas_spend = self.preverify_transaction_inner().inspect_err(|e| {
+        let initial_gas_spend = self.preverify_transaction_inner().inspect_err(|_| {
             self.clear();
         })?;
 
