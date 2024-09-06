@@ -485,14 +485,18 @@ impl PrecompileSpecId {
             PRAGUE | PRAGUE_EOF => Self::PRAGUE,
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
-            #[cfg(feature = "optimism")]
+            #[cfg(all(feature = "optimism", not(feature = "opbnb")))]
             ECOTONE | FJORD => Self::CANCUN,
+            #[cfg(all(feature = "optimism", feature = "opbnb"))]
+            ECOTONE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
             HABER => Self::HABER,
             #[cfg(feature = "opbnb")]
             WRIGHT => Self::HABER,
+            #[cfg(all(feature = "optimism", feature = "opbnb"))]
+            FJORD => Self::HABER,
             #[cfg(feature = "bsc")]
             HABER_FIX => Self::HABER,
             #[cfg(feature = "bsc")]
