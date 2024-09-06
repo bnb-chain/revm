@@ -46,7 +46,6 @@ use cfg_if::cfg_if;
 use core::hash::Hash;
 use once_cell::race::OnceBox;
 use std::{boxed::Box, vec::Vec};
-use revm_primitives::{ECOTONE, FJORD};
 
 pub fn calc_linear_cost_u32(len: usize, base: u64, word: u64) -> u64 {
     (len as u64 + 32 - 1) / 32 * word + base
@@ -487,7 +486,7 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(all(feature = "optimism", not(feature = "opbnb")))]
-            ECOTONE | FJORD=> Self::CANCUN,
+            ECOTONE | FJORD => Self::CANCUN,
             #[cfg(all(feature = "optimism", feature = "opbnb"))]
             ECOTONE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
