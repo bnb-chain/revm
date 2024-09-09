@@ -116,7 +116,7 @@ pub enum SpecId {
     HABER = 30,          // Haber                                timestamp(1718863500)
     HABER_FIX = 31,      // HaberFix                             timestamp(1720591588)
     BOHR = 32,           // Bohr                                 timestamp(1720591588)
-    Pascal = 33,         // Pascal                               timestamp(1720591588)
+    PASCAL = 33,         // Pascal                               timestamp(1720591588)
 
     /// Not enabled in bsc
     DAO_FORK = 100,
