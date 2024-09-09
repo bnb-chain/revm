@@ -667,7 +667,10 @@ macro_rules! spec_to_generic {
                 use $crate::PragueEofSpec as SPEC;
                 $e
             }
-            $crate::SpecId::HABER | $crate::SpecId::HABER_FIX | $crate::SpecId::BOHR | $crate::SpecId::PASCAL => {
+            $crate::SpecId::HABER
+            | $crate::SpecId::HABER_FIX
+            | $crate::SpecId::BOHR
+            | $crate::SpecId::PASCAL => {
                 use $crate::HaberSpec as SPEC;
                 $e
             }
