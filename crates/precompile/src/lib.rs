@@ -501,6 +501,8 @@ impl PrecompileSpecId {
             HABER_FIX => Self::HABER,
             #[cfg(feature = "bsc")]
             BOHR => Self::HABER,
+            #[cfg(feature = "bsc")]
+            PASCAL => Self::HABER,
             LATEST => Self::LATEST,
         }
     }
