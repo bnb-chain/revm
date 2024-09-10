@@ -165,7 +165,7 @@ pub fn refund<SPEC: Spec, EXT, DB: Database>(
 pub fn load_precompiles<SPEC: Spec, EXT, DB: Database>() -> ContextPrecompiles<DB> {
     let mut precompiles = ContextPrecompiles::new(PrecompileSpecId::from_spec_id(SPEC::SPEC_ID));
 
-    if SPEC::enabled(SpecId::FJORD) {
+    if SPEC::enabled(SpecId::FJORD) || SPEC::enabled(SpecId::HABER) {
         precompiles.extend([
             // EIP-7212: secp256r1 P256verify
             secp256r1::P256VERIFY,
