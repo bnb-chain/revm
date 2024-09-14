@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.0.2](https://github.com/bluealloy/revm/compare/revm-precompile-v11.0.1...revm-precompile-v11.0.2) - 2024-09-18
+
+### Other
+
+- make clippy happy ([#1755](https://github.com/bluealloy/revm/pull/1755))
+
+## [11.0.1](https://github.com/bluealloy/revm/compare/revm-precompile-v11.0.0...revm-precompile-v11.0.1) - 2024-08-30
+
+### Other
+- Bump new logo ([#1735](https://github.com/bluealloy/revm/pull/1735))
+- bump kzg-rs version ([#1734](https://github.com/bluealloy/revm/pull/1734))
+
 ## [10.1.0](https://github.com/bluealloy/revm/compare/revm-precompile-v10.0.0...revm-precompile-v10.1.0) - 2024-08-29
 
 ### Added
