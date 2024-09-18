@@ -9,15 +9,11 @@
 extern crate alloc as std;
 
 pub mod blake2;
-mod bls;
 #[cfg(feature = "blst")]
 pub mod bls12_381;
 pub mod bn128;
-mod cometbft;
-mod double_sign;
 pub mod fatal_precompile;
 pub mod hash;
-mod iavl;
 pub mod identity;
 #[cfg(any(feature = "c-kzg", feature = "kzg-rs"))]
 pub mod kzg_point_evaluation;
@@ -25,10 +21,15 @@ pub mod modexp;
 pub mod secp256k1;
 #[cfg(feature = "secp256r1")]
 pub mod secp256r1;
+pub mod utilities;
+
+mod bls;
+mod cometbft;
+mod double_sign;
+mod iavl;
 mod tendermint;
 #[cfg(feature = "secp256k1")]
 mod tm_secp256k1;
-pub mod utilities;
 
 pub use fatal_precompile::fatal_precompile;
 
@@ -486,9 +487,9 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(all(feature = "optimism", not(feature = "opbnb")))]
-            ECOTONE | FJORD => Self::CANCUN,
+            ECOTONE | FJORD | GRANITE => Self::CANCUN,
             #[cfg(all(feature = "optimism", feature = "opbnb"))]
-            ECOTONE => Self::CANCUN,
+            ECOTONE | GRANITE => Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
@@ -498,9 +499,7 @@ impl PrecompileSpecId {
             #[cfg(all(feature = "optimism", feature = "opbnb"))]
             FJORD => Self::HABER,
             #[cfg(feature = "bsc")]
-            HABER_FIX => Self::HABER,
-            #[cfg(feature = "bsc")]
-            BOHR => Self::HABER,
+            HABER_FIX | BOHR => Self::HABER,
             LATEST => Self::LATEST,
         }
     }

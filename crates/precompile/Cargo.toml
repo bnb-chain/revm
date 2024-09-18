@@ -6,7 +6,7 @@ keywords = ["no_std", "ethereum", "evm", "revm", "precompiles"]
 license = "MIT"
 name = "revm-precompile"
 repository = "https://github.com/bluealloy/revm"
-version = "9.2.0"
+version = "11.0.0"
 readme = "../../README.md"
 
 [package.metadata.docs.rs]
@@ -27,7 +27,7 @@ alloy-rlp = { version = "0.3.7", default-features = false, features = [
     "derive",
 ] }
 
-revm-primitives = { path = "../primitives", version = "7.1.0", default-features = false }
+revm-primitives = { path = "../primitives", version = "9.0.0", default-features = false }
 once_cell = { version = "1.19", default-features = false, features = ["alloc"] }
 
 # ecRecover
@@ -44,7 +44,7 @@ cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.g
 cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
 prost = { version = "0.12.6" }
 bls_on_arkworks = "0.3.0"
-tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", tag = "v0.1.0-beta.1", features = ["secp256k1"] }
+tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "8c21ccbd58a174e07eed2c9343e63ccd00f0fbd5", features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
 
 # SHA2-256 and RIPEMD-160
@@ -58,15 +58,15 @@ aurora-engine-modexp = { version = "1.1", default-features = false }
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 
 # KZG point evaluation precompile
-c-kzg = { version = "1.0.2", default-features = false, optional = true }
+c-kzg = { version = "1.0.3", default-features = false, optional = true, features = [
+    "ethereum_kzg_settings",
+] }
 
 # Optionally use `kzg-rs` for a pure Rust implementation of KZG point evaluation.
-kzg-rs = { version = "0.1", default-features = false, features = [
-    'cache',
-], optional = true }
+kzg-rs = { version = "0.2.2", default-features = false, optional = true }
 
 # BLS12-381 precompiles
-blst = { version = "0.3.12", optional = true }
+blst = { version = "0.3.13", optional = true }
 
 # p256verify precompile
 p256 = { version = "0.13.2", optional = true, default-features = false, features = [
@@ -80,7 +80,7 @@ cfg-if = { version = "1.0", default-features = false }
 criterion = "0.5"
 rand = { version = "0.8", features = ["std"] }
 eyre = "0.6.12"
-rstest = "0.21.0"
+rstest = "0.22.0"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
