@@ -72,8 +72,9 @@ pub enum SpecId {
     WRIGHT = 24,
     FJORD = 25,
     GRANITE = 26,
-    PRAGUE = 27,
-    PRAGUE_EOF = 28,
+    HOLOCENE = 27,
+    PRAGUE = 28,
+    PRAGUE_EOF = 29,
     #[default]
     LATEST = u8::MAX,
 }
@@ -182,6 +183,8 @@ impl From<&str> for SpecId {
             "Fjord" => SpecId::FJORD,
             #[cfg(feature = "optimism")]
             "Granite" => SpecId::GRANITE,
+            #[cfg(feature = "optimism")]
+            "Holocene" => SpecId::HOLOCENE,
             #[cfg(feature = "bsc")]
             "Ramanujan" => SpecId::RAMANUJAN,
             #[cfg(feature = "bsc")]
@@ -264,6 +267,8 @@ impl From<SpecId> for &'static str {
             SpecId::FJORD => "Fjord",
             #[cfg(feature = "optimism")]
             SpecId::GRANITE => "Granite",
+            #[cfg(feature = "optimism")]
+            SpecId::HOLOCENE => "Holocene",
             #[cfg(feature = "bsc")]
             SpecId::RAMANUJAN => "Ramanujan",
             #[cfg(feature = "bsc")]
@@ -387,6 +392,8 @@ spec!(ECOTONE, EcotoneSpec);
 spec!(FJORD, FjordSpec);
 #[cfg(feature = "optimism")]
 spec!(GRANITE, GraniteSpec);
+#[cfg(feature = "optimism")]
+spec!(HOLOCENE, HoloceneSpec);
 #[cfg(feature = "opbnb")]
 spec!(FERMAT, FermatSpec);
 #[cfg(feature = "opbnb")]
@@ -569,6 +576,10 @@ macro_rules! spec_to_generic {
                 use $crate::GraniteSpec as SPEC;
                 $e
             }
+            $crate::SpecId::HOLOCENE => {
+                use $crate::HoloceneSpec as SPEC;
+                $e
+            }
         }
     }};
 }
@@ -697,7 +708,6 @@ mod tests {
         spec_to_generic!(FRONTIER, assert_eq!(SPEC::SPEC_ID, FRONTIER));
         spec_to_generic!(FRONTIER_THAWING, assert_eq!(SPEC::SPEC_ID, FRONTIER));
         spec_to_generic!(HOMESTEAD, assert_eq!(SPEC::SPEC_ID, HOMESTEAD));
-        #[cfg(not(feature = "bsc"))]
         spec_to_generic!(DAO_FORK, assert_eq!(SPEC::SPEC_ID, HOMESTEAD));
         spec_to_generic!(TANGERINE, assert_eq!(SPEC::SPEC_ID, TANGERINE));
         spec_to_generic!(SPURIOUS_DRAGON, assert_eq!(SPEC::SPEC_ID, SPURIOUS_DRAGON));
@@ -732,6 +742,8 @@ mod tests {
         spec_to_generic!(FJORD, assert_eq!(SPEC::SPEC_ID, FJORD));
         #[cfg(feature = "optimism")]
         spec_to_generic!(GRANITE, assert_eq!(SPEC::SPEC_ID, GRANITE));
+        #[cfg(feature = "optimism")]
+        spec_to_generic!(HOLOCENE, assert_eq!(SPEC::SPEC_ID, HOLOCENE));
         #[cfg(not(feature = "bsc"))]
         spec_to_generic!(PRAGUE, assert_eq!(SPEC::SPEC_ID, PRAGUE));
         #[cfg(not(feature = "bsc"))]
@@ -922,5 +934,27 @@ mod optimism_tests {
         assert!(SpecId::enabled(SpecId::GRANITE, SpecId::ECOTONE));
         assert!(SpecId::enabled(SpecId::GRANITE, SpecId::FJORD));
         assert!(SpecId::enabled(SpecId::GRANITE, SpecId::GRANITE));
+    }
+
+    #[test]
+    fn test_holocene_post_merge_hardforks() {
+        // from MERGE to HOLOCENE
+        for i in 15..=24 {
+            if let Some(spec) = SpecId::try_from_u8(i) {
+                assert!(HoloceneSpec::enabled(spec));
+            }
+        }
+        assert!(!HoloceneSpec::enabled(SpecId::LATEST));
+    }
+
+    #[test]
+    fn test_holocene_post_merge_hardforks_spec_id() {
+        // from MERGE to HOLOCENE
+        for i in 15..=24 {
+            if let Some(spec) = SpecId::try_from_u8(i) {
+                assert!(SpecId::enabled(SpecId::HOLOCENE, spec));
+            }
+        }
+        assert!(!SpecId::enabled(SpecId::HOLOCENE, SpecId::LATEST));
     }
 }

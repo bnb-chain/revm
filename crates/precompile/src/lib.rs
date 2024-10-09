@@ -487,9 +487,9 @@ impl PrecompileSpecId {
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(all(feature = "optimism", not(feature = "opbnb")))]
-            ECOTONE | FJORD | GRANITE => Self::CANCUN,
+            ECOTONE | FJORD | GRANITE | HOLOCENE=> Self::CANCUN,
             #[cfg(all(feature = "optimism", feature = "opbnb"))]
-            ECOTONE | GRANITE => Self::CANCUN,
+            ECOTONE | GRANITE | HOLOCENE=> Self::CANCUN,
             #[cfg(feature = "opbnb")]
             FERMAT => Self::FERMAT,
             #[cfg(any(feature = "bsc", feature = "opbnb"))]
