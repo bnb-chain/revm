@@ -6,6 +6,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [14.0.2](https://github.com/bluealloy/revm/compare/revm-v14.0.1...revm-v14.0.2) - 2024-09-18
+
+### Fixed
+
+- *(inspector)* always call selfdestruct if entry is made ([#1746](https://github.com/bluealloy/revm/pull/1746))
+
+### Other
+
+- *(deps)* bump alloy-sol-types from 0.8.0 to 0.8.2 ([#1762](https://github.com/bluealloy/revm/pull/1762))
+- *(deps)* bump anyhow from 1.0.86 to 1.0.87 ([#1760](https://github.com/bluealloy/revm/pull/1760))
+- make clippy happy ([#1755](https://github.com/bluealloy/revm/pull/1755))
+- Test l1 gas used fjord ([#1749](https://github.com/bluealloy/revm/pull/1749))
+- Add test for `revm::optimism::L1BlockInfo::calculate_tx_l1_cost_fjord` ([#1743](https://github.com/bluealloy/revm/pull/1743))
+- *(deps)* bump tokio from 1.39.2 to 1.40.0 ([#1739](https://github.com/bluealloy/revm/pull/1739))
+
+## [14.0.1](https://github.com/bluealloy/revm/compare/revm-v14.0.0...revm-v14.0.1) - 2024-08-30
+
+### Other
+- Bump new logo ([#1735](https://github.com/bluealloy/revm/pull/1735))
+
+## [14.0.0](https://github.com/bluealloy/revm/compare/revm-v13.0.0...revm-v14.0.0) - 2024-08-29
+
+### Added
+- *(eip7702)* Impl newest version of EIP  ([#1695](https://github.com/bluealloy/revm/pull/1695))
+
+### Other
+- *(deps)* bump alloy and primitives ([#1725](https://github.com/bluealloy/revm/pull/1725))
+- cast block number to u64 and not usize ([#1727](https://github.com/bluealloy/revm/pull/1727))
+- clean up some journalstate docs ([#1712](https://github.com/bluealloy/revm/pull/1712))
+- update some docs related to state ([#1711](https://github.com/bluealloy/revm/pull/1711))
+
+## [12.2.0](https://github.com/bluealloy/revm/compare/revm-v12.1.0...revm-v12.2.0) - 2024-08-08
+
+### Added
+- check for typos in CI ([#1686](https://github.com/bluealloy/revm/pull/1686))
+- *(EOF)* EOF Validation add code type and sub container tracker ([#1648](https://github.com/bluealloy/revm/pull/1648))
+
+### Other
+- Add OP-Granite hardfork, limiting bn256Pairing input size ([#1685](https://github.com/bluealloy/revm/pull/1685))
+- *(deps)* bump rstest from 0.21.0 to 0.22.0 ([#1681](https://github.com/bluealloy/revm/pull/1681))
+- *(deps)* bump tokio from 1.38.1 to 1.39.2 ([#1668](https://github.com/bluealloy/revm/pull/1668))
+- *(clippy)* 1.80 rust clippy list paragraph ident ([#1661](https://github.com/bluealloy/revm/pull/1661))
+- avoid cloning original_bytes ([#1646](https://github.com/bluealloy/revm/pull/1646))
+- use `is_zero` for `U256` and `B256` ([#1638](https://github.com/bluealloy/revm/pull/1638))
+- fix some typos & remove useless Arc::clone ([#1621](https://github.com/bluealloy/revm/pull/1621))
+- *(eof)* simplify magic checks ([#1633](https://github.com/bluealloy/revm/pull/1633))
+
 ## [12.0.0](https://github.com/bluealloy/revm/compare/revm-v11.0.0...revm-v12.0.0) - 2024-07-16
 
 ### Added

@@ -1,6 +1,5 @@
 //! Handler related to BNB-Smart-chain
 
-use crate::primitives::KECCAK_EMPTY;
 use crate::{
     handler::register::EvmHandler,
     interpreter::Gas,
@@ -89,14 +88,14 @@ pub fn collect_system_reward<SPEC: Spec, EXT, DB: Database>(
         tx_fee = tx_fee.saturating_add(*data_fee);
     }
 
-    let (system_account, _) = context
+    let system_account = context
         .evm
         .inner
         .journaled_state
         .load_account(SYSTEM_ADDRESS, &mut context.evm.inner.db)?;
 
-    system_account.mark_touch();
-    system_account.info.balance = system_account.info.balance.saturating_add(tx_fee);
+    system_account.data.mark_touch();
+    system_account.data.info.balance = system_account.data.info.balance.saturating_add(tx_fee);
 
     Ok(())
 }
@@ -126,17 +125,7 @@ pub fn output<EXT, DB: Database>(
     let instruction_result = result.into_interpreter_result();
 
     // reset journal and return present state.
-    let (mut state, logs) = context.evm.journaled_state.finalize();
-
-    // clear code of authorized accounts.
-    for authorized in core::mem::take(&mut context.evm.inner.valid_authorizations).into_iter() {
-        let account = state
-            .get_mut(&authorized)
-            .expect("Authorized account must exist");
-        account.info.code = None;
-        account.info.code_hash = KECCAK_EMPTY;
-        account.storage.clear();
-    }
+    let (state, logs) = context.evm.journaled_state.finalize();
 
     let result = match instruction_result.result.into() {
         SuccessOrHalt::Success(reason) => ExecutionResult::Success {
