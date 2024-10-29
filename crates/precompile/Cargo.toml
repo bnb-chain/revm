@@ -22,7 +22,7 @@ rust_2018_idioms = "deny"
 all = "warn"
 
 [dependencies]
-alloy-rlp = { version = "0.3.7", default-features = false, features = [
+alloy-rlp = { version = "0.3.9", default-features = false, features = [
     "arrayvec",
     "derive",
 ] }
