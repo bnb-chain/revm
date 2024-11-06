@@ -14,7 +14,7 @@ use prost::Message;
 use revm_primitives::{Bytes, PrecompileOutput};
 use std::{borrow::ToOwned, string::String, vec::Vec};
 
-pub(crate) const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
+pub const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
     Precompile::Standard(cometbft_light_block_validation_run),
 );

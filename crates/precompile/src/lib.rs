@@ -3,6 +3,7 @@
 //! Implementations of EVM precompiled contracts.
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unused_mut)]
 
 #[macro_use]
 #[cfg(not(feature = "std"))]
@@ -23,8 +24,8 @@ pub mod secp256k1;
 pub mod secp256r1;
 pub mod utilities;
 
-mod bls;
-mod cometbft;
+pub mod bls;
+pub mod cometbft;
 mod double_sign;
 mod iavl;
 mod tendermint;
@@ -182,6 +183,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::istanbul().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([
                 tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
                 iavl::IAVL_PROOF_VALIDATION_NANO,
@@ -196,6 +198,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::istanbul().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([
                 tendermint::TENDERMINT_HEADER_VALIDATION,
                 iavl::IAVL_PROOF_VALIDATION_MORAN,
@@ -210,6 +213,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::istanbul().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([
                 tendermint::TENDERMINT_HEADER_VALIDATION,
                 iavl::IAVL_PROOF_VALIDATION_PLANCK,
@@ -263,7 +267,7 @@ impl Precompiles {
             precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
 
             // this feature is enabled with bsc
-            #[cfg(feature = "secp256k1")]
+            #[cfg(all(feature = "secp256k1", feature = "bsc"))]
             precompiles.extend([tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER]);
 
             Box::new(precompiles)

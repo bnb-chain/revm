@@ -1,8 +1,10 @@
 #![allow(dead_code)]
+#![allow(unused_imports)]
 
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use parity_bytes::BytesRef;
 use revm_primitives::PrecompileOutput;
+#[cfg(feature = "bsc")]
 use tendermint::lite::iavl_proof;
 
 /// Iavl proof validation precompile for BSC.
@@ -61,6 +63,7 @@ fn iavl_proof_validation_run_plato(input: &Bytes, gas_limit: u64) -> PrecompileR
 }
 
 /// Run Iavl proof validation with given hardfork toggles.
+#[cfg(feature = "bsc")]
 fn iavl_proof_validation_run_inner(
     input: &Bytes,
     gas_limit: u64,
@@ -86,7 +89,19 @@ fn iavl_proof_validation_run_inner(
     }
 }
 
+#[cfg(not(feature = "bsc"))]
+fn iavl_proof_validation_run_inner(
+    _input: &Bytes,
+    _gas_limit: u64,
+    _is_moran: bool,
+    _is_planck: bool,
+    _is_plato: bool,
+) -> PrecompileResult {
+    Err(PrecompileError::other("suspended").into())
+}
+
 #[cfg(test)]
+#[cfg(feature = "bsc")]
 mod tests {
     use super::*;
     use revm_primitives::hex;

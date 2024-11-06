@@ -38,13 +38,13 @@ secp256k1 = { version = ">=0.28, <=0.29", default-features = false, features = [
     "rand",
     "global-context",
 ], optional = true }
-cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
+cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "5582327" }
+cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "5582327" }
+cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "5582327" }
+cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "5582327", default-features = false }
 prost = { version = "0.12.6" }
 bls_on_arkworks = "0.3.0"
-tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "8c21ccbd58a174e07eed2c9343e63ccd00f0fbd5", features = ["secp256k1"] }
+tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "8c21ccbd58a174e07eed2c9343e63ccd00f0fbd5", optional = true, features = ["secp256k1"] }
 parity-bytes = { version = "0.1.2", default-features = false }
 
 # SHA2-256 and RIPEMD-160
@@ -99,7 +99,7 @@ std = [
 hashbrown = ["revm-primitives/hashbrown"]
 asm-keccak = ["revm-primitives/asm-keccak"]
 
-bsc = ["revm-primitives/bsc", "secp256k1", "secp256r1"]
+bsc = ["revm-primitives/bsc", "secp256k1", "secp256r1", "tendermint"]
 
 optimism = ["revm-primitives/optimism", "secp256r1"]
 # Optimism default handler enabled Optimism handler register by default in EvmBuilder.
