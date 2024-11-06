@@ -26,10 +26,13 @@ pub mod utilities;
 
 pub mod bls;
 pub mod cometbft;
+#[cfg(feature = "bsc")]
 mod double_sign;
+#[cfg(feature = "bsc")]
 mod iavl;
+#[cfg(feature = "bsc")]
 mod tendermint;
-#[cfg(feature = "secp256k1")]
+#[cfg(all(feature = "secp256k1", feature = "bsc"))]
 mod tm_secp256k1;
 
 pub use fatal_precompile::fatal_precompile;
@@ -242,6 +245,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::luban().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
 
             Box::new(precompiles)
@@ -264,6 +268,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::hertz().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
 
             // this feature is enabled with bsc

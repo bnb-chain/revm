@@ -1,22 +1,18 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use parity_bytes::BytesRef;
 use revm_primitives::PrecompileOutput;
-#[cfg(feature = "bsc")]
 use tendermint::lite::light_client;
 
 /// Tendermint precompile for BSC.
-#[cfg(feature = "bsc")]
 pub(crate) const TENDERMINT_HEADER_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(100),
-    Precompile::Standard(crate::tendermint::tendermint_header_validation_run),
+    Precompile::Standard(tendermint_header_validation_run),
 );
 
 /// Tendermint precompile for BSC after Nano hardfork.
 pub(crate) const TENDERMINT_HEADER_VALIDATION_NANO: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(100),
-    Precompile::Standard(crate::tendermint::tendermint_header_validation_run_nano),
+    Precompile::Standard(tendermint_header_validation_run_nano),
 );
 
 /// Run the Tendermint header validation precompile after Nano hardfork.
@@ -25,7 +21,6 @@ fn tendermint_header_validation_run_nano(_input: &Bytes, _gas_limit: u64) -> Pre
 }
 
 /// Run the Tendermint header validation precompile.
-#[cfg(feature = "bsc")]
 fn tendermint_header_validation_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const TENDERMINT_HEADER_VALIDATION_BASE: u64 = 3_000;
 
@@ -46,7 +41,6 @@ fn tendermint_header_validation_run(input: &Bytes, gas_limit: u64) -> Precompile
 }
 
 #[cfg(test)]
-#[cfg(feature = "bsc")]
 mod tests {
     use super::*;
     use revm_primitives::hex;
