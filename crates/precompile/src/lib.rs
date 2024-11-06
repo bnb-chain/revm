@@ -3,7 +3,6 @@
 //! Implementations of EVM precompiled contracts.
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(unused_mut)]
 
 #[macro_use]
 #[cfg(not(feature = "std"))]
@@ -27,7 +26,9 @@ pub mod utilities;
 pub mod bls;
 pub mod cometbft;
 mod double_sign;
+#[cfg(feature = "bsc")]
 mod iavl;
+#[cfg(feature = "bsc")]
 mod tendermint;
 #[cfg(feature = "secp256k1")]
 mod tm_secp256k1;
