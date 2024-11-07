@@ -681,8 +681,8 @@ macro_rules! spec_to_generic {
                 use $crate::PragueSpec as SPEC;
                 $e
             }
-            $crate::SpecId::PRAGUE_EOF => {
-                use $crate::PragueEofSpec as SPEC;
+            $crate::SpecId::OSAKA => {
+                use $crate::OsakaSpec as SPEC;
                 $e
             }
             $crate::SpecId::HABER | $crate::SpecId::HABER_FIX | $crate::SpecId::BOHR => {
@@ -747,7 +747,7 @@ mod tests {
         #[cfg(not(feature = "bsc"))]
         spec_to_generic!(PRAGUE, assert_eq!(SPEC::SPEC_ID, PRAGUE));
         #[cfg(not(feature = "bsc"))]
-        spec_to_generic!(PRAGUE_EOF, assert_eq!(SPEC::SPEC_ID, PRAGUE_EOF));
+        spec_to_generic!(OSAKA, assert_eq!(SPEC::SPEC_ID, OSAKA));
         #[cfg(any(feature = "bsc", feature = "opbnb"))]
         spec_to_generic!(HABER, assert_eq!(SPEC::SPEC_ID, HABER));
         spec_to_generic!(OSAKA, assert_eq!(SPEC::SPEC_ID, OSAKA));
