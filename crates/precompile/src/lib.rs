@@ -243,6 +243,7 @@ impl Precompiles {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
             let mut precompiles = Self::luban().clone();
+            #[cfg(feature = "bsc")]
             precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
 
             Box::new(precompiles)
