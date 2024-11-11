@@ -3,11 +3,9 @@
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use revm_primitives::PrecompileOutput;
 use secp256k1::{ecdsa, Message, PublicKey};
-#[cfg(feature = "bsc")]
 use tendermint::{account, public_key};
 
 /// Tendermint SECP256K1 signature recover precompile for BSC.
-#[cfg(feature = "bsc")]
 pub(crate) const TM_SECP256K1_SIGNATURE_RECOVER: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(105),
     Precompile::Standard(tm_secp256k1_signature_recover_run),
@@ -24,7 +22,6 @@ const SECP256K1_SIGNATURE_MSGHASH_LENGTH: usize = 32;
 /// | PubKey   | Signature    |  SignatureMsgHash    |
 ///
 /// | 33 bytes |  64 bytes    |       32 bytes       |
-#[cfg(feature = "bsc")]
 fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> PrecompileResult {
     const TM_SECP256K1_SIGNATURE_RECOVER_BASE: u64 = 3_000;
 
@@ -76,7 +73,6 @@ fn tm_secp256k1_signature_recover_run(input: &Bytes, gas_limit: u64) -> Precompi
 }
 
 #[cfg(test)]
-#[cfg(feature = "bsc")]
 mod tests {
     use super::*;
     use revm_primitives::hex;
