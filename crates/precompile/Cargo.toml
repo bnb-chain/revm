@@ -38,10 +38,10 @@ secp256k1 = { version = ">=0.28, <=0.29", default-features = false, features = [
     "rand",
     "global-context",
 ], optional = true }
-cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
-cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "1282547" }
+cometbft = { git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "a7683a7a783918c88bb1400f24264735a9a0827f" }
+cometbft-light-client-verifier = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "a7683a7a783918c88bb1400f24264735a9a0827f" }
+cometbft-proto = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "a7683a7a783918c88bb1400f24264735a9a0827f" }
+cometbft-light-client = {  git = "https://github.com/bnb-chain/greenfield-cometbft-rs.git", rev = "a7683a7a783918c88bb1400f24264735a9a0827f" }
 prost = { version = "0.12.6" }
 bls_on_arkworks = "0.3.0"
 tendermint = { git = "https://github.com/bnb-chain/tendermint-rs-parlia", rev = "8c21ccbd58a174e07eed2c9343e63ccd00f0fbd5", features = ["secp256k1"] }
