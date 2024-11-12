@@ -3,7 +3,7 @@ use bls_on_arkworks as bls;
 use revm_primitives::{Bytes, PrecompileOutput};
 use std::vec::Vec;
 
-pub(crate) const BLS_SIGNATURE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
+pub const BLS_SIGNATURE_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(102),
     Precompile::Standard(bls_signature_validation_run),
 );

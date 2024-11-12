@@ -23,10 +23,12 @@ pub mod secp256k1;
 pub mod secp256r1;
 pub mod utilities;
 
-mod bls;
-mod cometbft;
+pub mod bls;
+pub mod cometbft;
 mod double_sign;
+#[cfg(feature = "bsc")]
 mod iavl;
+#[cfg(feature = "bsc")]
 mod tendermint;
 #[cfg(feature = "secp256k1")]
 mod tm_secp256k1;
@@ -181,11 +183,17 @@ impl Precompiles {
     pub fn nano() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let mut precompiles = Self::istanbul().clone();
-            precompiles.extend([
-                tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
-                iavl::IAVL_PROOF_VALIDATION_NANO,
-            ]);
+            let precompiles = Self::istanbul().clone();
+
+            #[cfg(feature = "bsc")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION_NANO,
+                    iavl::IAVL_PROOF_VALIDATION_NANO,
+                ]);
+                precompiles
+            };
 
             Box::new(precompiles)
         })
@@ -195,11 +203,17 @@ impl Precompiles {
     pub fn moran() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let mut precompiles = Self::istanbul().clone();
-            precompiles.extend([
-                tendermint::TENDERMINT_HEADER_VALIDATION,
-                iavl::IAVL_PROOF_VALIDATION_MORAN,
-            ]);
+            let precompiles = Self::istanbul().clone();
+
+            #[cfg(feature = "bsc")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION,
+                    iavl::IAVL_PROOF_VALIDATION_MORAN,
+                ]);
+                precompiles
+            };
 
             Box::new(precompiles)
         })
@@ -209,11 +223,17 @@ impl Precompiles {
     pub fn planck() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let mut precompiles = Self::istanbul().clone();
-            precompiles.extend([
-                tendermint::TENDERMINT_HEADER_VALIDATION,
-                iavl::IAVL_PROOF_VALIDATION_PLANCK,
-            ]);
+            let precompiles = Self::istanbul().clone();
+
+            #[cfg(feature = "bsc")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([
+                    tendermint::TENDERMINT_HEADER_VALIDATION,
+                    iavl::IAVL_PROOF_VALIDATION_PLANCK,
+                ]);
+                precompiles
+            };
 
             Box::new(precompiles)
         })
@@ -237,8 +257,13 @@ impl Precompiles {
     pub fn plato() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
-            let mut precompiles = Self::luban().clone();
-            precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
+            let precompiles = Self::luban().clone();
+            #[cfg(feature = "bsc")]
+            let precompiles = {
+                let mut precompiles = precompiles;
+                precompiles.extend([iavl::IAVL_PROOF_VALIDATION_PLATO]);
+                precompiles
+            };
 
             Box::new(precompiles)
         })
@@ -263,7 +288,7 @@ impl Precompiles {
             precompiles.extend([double_sign::DOUBLE_SIGN_EVIDENCE_VALIDATION]);
 
             // this feature is enabled with bsc
-            #[cfg(feature = "secp256k1")]
+            #[cfg(all(feature = "secp256k1", feature = "bsc"))]
             precompiles.extend([tm_secp256k1::TM_SECP256K1_SIGNATURE_RECOVER]);
 
             Box::new(precompiles)
