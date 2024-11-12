@@ -1104,7 +1104,7 @@ checksum = "4b82cf0babdbd58558212896d1a4272303a57bdb245c2bf1147185fb45640e70"
 [[package]]
 name = "cometbft"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "bytes 1.7.1",
  "cometbft-proto",
@@ -1131,7 +1131,7 @@ dependencies = [
 [[package]]
 name = "cometbft-config"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "cometbft",
  "flex-error",
@@ -1144,7 +1144,7 @@ dependencies = [
 [[package]]
 name = "cometbft-light-client"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "cometbft",
  "cometbft-light-client-verifier",
@@ -1166,7 +1166,7 @@ dependencies = [
 [[package]]
 name = "cometbft-light-client-verifier"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "cometbft",
  "derive_more 0.99.18",
@@ -1178,7 +1178,7 @@ dependencies = [
 [[package]]
 name = "cometbft-proto"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "bytes 1.7.1",
  "flex-error",
@@ -1195,7 +1195,7 @@ dependencies = [
 [[package]]
 name = "cometbft-rpc"
 version = "0.1.0-alpha.2"
-source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=5582327#558232788fca6ade6ae2e16a7557af1982105c4f"
+source = "git+https://github.com/bnb-chain/greenfield-cometbft-rs.git?rev=ccf58da#ccf58dabac222c7950aa52d8b700fc61beb9ae7f"
 dependencies = [
  "async-trait",
  "bytes 1.7.1",
