@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [14.0.0](https://github.com/bluealloy/revm/compare/revm-precompile-v13.0.0...revm-precompile-v14.0.0) - 2024-10-23
+
+### Other
+
+- updated the following local packages: revm-primitives
+
+## [13.0.0](https://github.com/bluealloy/revm/compare/revm-precompile-v12.0.0...revm-precompile-v13.0.0) - 2024-10-17
+
+### Other
+
+- updated the following local packages: revm-primitives
+
+## [12.0.0](https://github.com/bluealloy/revm/compare/revm-precompile-v11.0.3...revm-precompile-v12.0.0) - 2024-10-17
+
+### Added
+
+- Rename PRAGUE_EOF to OSAKA ([#1822](https://github.com/bluealloy/revm/pull/1822))
+
 ## [11.0.3](https://github.com/bluealloy/revm/compare/revm-precompile-v11.0.2...revm-precompile-v11.0.3) - 2024-09-26
 
 ### Other

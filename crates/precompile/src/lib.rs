@@ -483,7 +483,7 @@ impl PrecompileSpecId {
             #[cfg(feature = "bsc")]
             FEYNMAN | FEYNMAN_FIX => Self::FEYNMAN,
             CANCUN => Self::CANCUN,
-            PRAGUE | PRAGUE_EOF => Self::PRAGUE,
+            PRAGUE | OSAKA => Self::PRAGUE,
             #[cfg(feature = "optimism")]
             BEDROCK | REGOLITH | CANYON => Self::BERLIN,
             #[cfg(all(feature = "optimism", not(feature = "opbnb")))]
