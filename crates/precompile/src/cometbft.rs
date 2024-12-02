@@ -14,7 +14,7 @@ use prost::Message;
 use revm_primitives::{Bytes, PrecompileOutput};
 use std::{borrow::ToOwned, string::String, vec::Vec};
 
-pub(crate) const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
+pub const COMETBFT_LIGHT_BLOCK_VALIDATION: PrecompileWithAddress = PrecompileWithAddress(
     crate::u64_to_address(103),
     Precompile::Standard(cometbft_light_block_validation_run),
 );
@@ -408,7 +408,7 @@ fn encode_light_block_validation_result(
     let mut output =
         vec![0; (VALIDATE_RESULT_METADATA_LENGTH + consensus_state_bytes.len() as u64) as usize];
     output[0] = if validator_set_changed { 1 } else { 0 };
-    output[24..32].copy_from_slice(consensus_state_bytes.len().to_be_bytes().as_ref());
+    output[24..32].copy_from_slice((consensus_state_bytes.len() as u64).to_be_bytes().as_ref());
     output[32..].copy_from_slice(consensus_state_bytes.as_ref());
     Bytes::from(output)
 }

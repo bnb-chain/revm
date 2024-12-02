@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![cfg_attr(feature = "bsc", warn(dead_code))]
+
 use crate::{Bytes, Error, Precompile, PrecompileError, PrecompileResult, PrecompileWithAddress};
 use revm_primitives::PrecompileOutput;
 use secp256k1::{ecdsa, Message, PublicKey};
