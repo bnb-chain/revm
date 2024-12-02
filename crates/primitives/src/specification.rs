@@ -32,7 +32,7 @@ pub enum SpecId {
     SHANGHAI = 16,        // Shanghai               17034870 (Timestamp: 1681338455)
     CANCUN = 17,          // Cancun                 19426587 (Timestamp: 1710338135)
     PRAGUE = 18,          // Prague                 TBD
-    PRAGUE_EOF = 19,      // Prague+EOF             TBD
+    OSAKA = 19,           // Prague+EOF             TBD
     #[default]
     LATEST = u8::MAX,
 }
@@ -74,7 +74,7 @@ pub enum SpecId {
     GRANITE = 26,
     HOLOCENE = 27,
     PRAGUE = 28,
-    PRAGUE_EOF = 29,
+    OSAKA = 29,
     #[default]
     LATEST = u8::MAX,
 }
@@ -125,7 +125,7 @@ pub enum SpecId {
     GRAY_GLACIER = 102,
     MERGE = 103,
     PRAGUE = 104,
-    PRAGUE_EOF = 105,
+    OSAKA = 106,
     #[default]
     LATEST = u8::MAX,
 }
@@ -168,7 +168,7 @@ impl From<&str> for SpecId {
             "Shanghai" => Self::SHANGHAI,
             "Cancun" => Self::CANCUN,
             "Prague" => Self::PRAGUE,
-            "PragueEOF" => Self::PRAGUE_EOF,
+            "Osaka" => Self::OSAKA,
             #[cfg(feature = "optimism")]
             "Bedrock" => SpecId::BEDROCK,
             #[cfg(feature = "optimism")]
@@ -252,7 +252,7 @@ impl From<SpecId> for &'static str {
             SpecId::SHANGHAI => "Shanghai",
             SpecId::CANCUN => "Cancun",
             SpecId::PRAGUE => "Prague",
-            SpecId::PRAGUE_EOF => "PragueEOF",
+            SpecId::OSAKA => "Osaka",
             #[cfg(feature = "optimism")]
             SpecId::BEDROCK => "Bedrock",
             #[cfg(feature = "optimism")]
@@ -355,7 +355,7 @@ spec!(MERGE, MergeSpec);
 spec!(SHANGHAI, ShanghaiSpec);
 spec!(CANCUN, CancunSpec);
 spec!(PRAGUE, PragueSpec);
-spec!(PRAGUE_EOF, PragueEofSpec);
+spec!(OSAKA, OsakaSpec);
 
 spec!(LATEST, LatestSpec);
 
@@ -462,8 +462,8 @@ macro_rules! spec_to_generic {
                 use $crate::PragueSpec as SPEC;
                 $e
             }
-            $crate::SpecId::PRAGUE_EOF => {
-                use $crate::PragueEofSpec as SPEC;
+            $crate::SpecId::OSAKA => {
+                use $crate::OsakaSpec as SPEC;
                 $e
             }
         }
@@ -533,8 +533,8 @@ macro_rules! spec_to_generic {
                 use $crate::PragueSpec as SPEC;
                 $e
             }
-            $crate::SpecId::PRAGUE_EOF => {
-                use $crate::PragueEofSpec as SPEC;
+            $crate::SpecId::OSAKA => {
+                use $crate::OsakaSpec as SPEC;
                 $e
             }
             $crate::SpecId::BEDROCK => {
@@ -681,8 +681,8 @@ macro_rules! spec_to_generic {
                 use $crate::PragueSpec as SPEC;
                 $e
             }
-            $crate::SpecId::PRAGUE_EOF => {
-                use $crate::PragueEofSpec as SPEC;
+            $crate::SpecId::OSAKA => {
+                use $crate::OsakaSpec as SPEC;
                 $e
             }
             $crate::SpecId::HABER | $crate::SpecId::HABER_FIX | $crate::SpecId::BOHR => {
@@ -747,9 +747,10 @@ mod tests {
         #[cfg(not(feature = "bsc"))]
         spec_to_generic!(PRAGUE, assert_eq!(SPEC::SPEC_ID, PRAGUE));
         #[cfg(not(feature = "bsc"))]
-        spec_to_generic!(PRAGUE_EOF, assert_eq!(SPEC::SPEC_ID, PRAGUE_EOF));
+        spec_to_generic!(OSAKA, assert_eq!(SPEC::SPEC_ID, OSAKA));
         #[cfg(any(feature = "bsc", feature = "opbnb"))]
         spec_to_generic!(HABER, assert_eq!(SPEC::SPEC_ID, HABER));
+        spec_to_generic!(OSAKA, assert_eq!(SPEC::SPEC_ID, OSAKA));
         spec_to_generic!(LATEST, assert_eq!(SPEC::SPEC_ID, LATEST));
 
         #[cfg(feature = "bsc")]
