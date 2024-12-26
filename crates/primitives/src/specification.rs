@@ -118,14 +118,14 @@ pub enum SpecId {
     HABER = 30,          // Haber                                timestamp(1718863500)
     HABER_FIX = 31,      // HaberFix                             timestamp(1720591588)
     BOHR = 32,           // Bohr                                 timestamp(1720591588)
+    PRAGUE = 33,         // Prague                               TBD
 
     /// Not enabled in bsc
     DAO_FORK = 100,
     ARROW_GLACIER = 101,
     GRAY_GLACIER = 102,
     MERGE = 103,
-    PRAGUE = 104,
-    OSAKA = 106,
+    OSAKA = 104,
     #[default]
     LATEST = u8::MAX,
 }
