@@ -77,8 +77,8 @@ impl Precompiles {
             PrecompileSpecId::HERTZ => Self::hertz(),
             PrecompileSpecId::FEYNMAN => Self::feynman(),
             PrecompileSpecId::CANCUN => Self::cancun(),
-            PrecompileSpecId::PRAGUE => Self::prague(),
             PrecompileSpecId::HABER => Self::haber(),
+            PrecompileSpecId::PRAGUE => Self::prague(),
             PrecompileSpecId::LATEST => Self::latest(),
         }
     }
@@ -308,6 +308,9 @@ impl Precompiles {
     pub fn prague() -> &'static Self {
         static INSTANCE: OnceBox<Precompiles> = OnceBox::new();
         INSTANCE.get_or_init(|| {
+            #[cfg(feature = "bsc")]
+            let precompiles = Self::haber().clone();
+            #[cfg(not(feature = "bsc"))]
             let precompiles = Self::cancun().clone();
 
             // Don't include BLS12-381 precompiles in no_std builds.
