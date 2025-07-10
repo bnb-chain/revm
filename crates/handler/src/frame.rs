@@ -1,5 +1,6 @@
 use crate::evm::FrameTr;
 use crate::item_or_result::FrameInitOrResult;
+use crate::opcode_async::gen_or_rewrite_optimized_code;
 use crate::{precompile_provider::PrecompileProvider, ItemOrResult};
 use crate::{CallFrame, CreateFrame, FrameData, FrameResult};
 use context::result::FromStringError;
@@ -54,6 +55,9 @@ pub struct EthFrame<IW: InterpreterTypes = EthInterpreter> {
     /// Whether the frame has been finished its execution.
     /// Frame is considered finished if it has been called and returned a result.
     pub is_finished: bool,
+
+    /// whether current frame is superinstruction
+    pub is_superinstruction: bool,
 }
 
 impl<IT: InterpreterTypes> FrameTr for EthFrame<IT> {
@@ -82,6 +86,7 @@ impl EthFrame<EthInterpreter> {
             checkpoint: JournalCheckpoint::default(),
             interpreter,
             is_finished: false,
+            is_superinstruction: false,
         }
     }
 
@@ -114,6 +119,7 @@ impl EthFrame<EthInterpreter> {
         spec_id: SpecId,
         gas_limit: u64,
         checkpoint: JournalCheckpoint,
+        is_superinstruction: bool,
     ) {
         let Self {
             data: data_ref,
@@ -122,6 +128,7 @@ impl EthFrame<EthInterpreter> {
             interpreter,
             checkpoint: checkpoint_ref,
             is_finished: is_finished_ref,
+            is_superinstruction: is_superinstruction_ref,
         } = self;
         *data_ref = data;
         *input_ref = input;
@@ -129,6 +136,7 @@ impl EthFrame<EthInterpreter> {
         *is_finished_ref = false;
         interpreter.clear(memory, bytecode, inputs, is_static, spec_id, gas_limit);
         *checkpoint_ref = checkpoint;
+        *is_superinstruction_ref = is_superinstruction;
     }
 
     /// Make call frame
@@ -226,14 +234,20 @@ impl EthFrame<EthInterpreter> {
                 .journal_mut()
                 .load_account_code(eip7702_bytecode.delegated_address)?
                 .info;
-            bytecode = account.code.clone().unwrap_or_default();
             code_hash = account.code_hash();
+            bytecode = account.code.clone().unwrap_or_default();
         }
 
         // Returns success if bytecode is empty.
         if bytecode.is_empty() {
             ctx.journal_mut().checkpoint_commit();
             return return_result(InstructionResult::Stop);
+        }
+
+        let mut cache_hit = false;
+        let mut si_bytecode = bytecode.clone();
+        if ctx.enable_superinstruction() {
+            (si_bytecode, cache_hit) = gen_or_rewrite_optimized_code(&code_hash, si_bytecode);
         }
 
         // Create interpreter and executes call and push new CallStackFrame.
@@ -244,12 +258,13 @@ impl EthFrame<EthInterpreter> {
             FrameInput::Call(inputs),
             depth,
             memory,
-            ExtBytecode::new_with_hash(bytecode, code_hash),
+            ExtBytecode::new_si_with_hash(si_bytecode, bytecode, code_hash),
             interpreter_input,
             is_static,
             ctx.cfg().spec().into(),
             gas_limit,
             checkpoint,
+            cache_hit,
         );
         Ok(ItemOrResult::Item(this.consume()))
     }
@@ -357,6 +372,7 @@ impl EthFrame<EthInterpreter> {
             spec,
             gas_limit,
             checkpoint,
+            false,
         );
         Ok(ItemOrResult::Item(this.consume()))
     }

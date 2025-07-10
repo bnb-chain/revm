@@ -77,6 +77,11 @@ pub trait ContextTr: Host {
     /// Get the transaction and local context. It is used to efficiently load initcode
     /// into local context without copying them from transaction.
     fn tx_local_mut(&mut self) -> (&Self::Tx, &mut Self::Local);
+
+    /// If use Superinstruction
+    fn enable_superinstruction(&mut self) -> bool {
+        false
+    }
 }
 
 /// Inner Context error used for Interpreter to set error without returning it from instruction

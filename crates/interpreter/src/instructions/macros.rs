@@ -113,10 +113,34 @@ macro_rules! resize_memory {
 macro_rules! popn {
     ([ $($x:ident),* ],$interpreter:expr $(,$ret:expr)? ) => {
         let Some([$( $x ),*]) = $interpreter.stack.popn() else {
+<<<<<<< HEAD
             $interpreter.halt_underflow();
+=======
+            $interpreter.halt($crate::InstructionResult::StackUnderflow);
+>>>>>>> cd0fcd96 (test bug)
             return $($ret)?;
         };
     };
+}
+
+/// Count the number of identifiers
+#[macro_export]
+macro_rules! count {
+    () => (0);
+    ($x:ident) => (1);
+    ($x:ident, $($rest:ident),*) => (1 + count!($($rest),*));
+}
+
+/// if use backn to take n num, like backn([a, b, c, d]), it will return (interpreter.stack.back(4), back(3), back(2), back(1))
+/// a = b(4), b = b(3), c = b(2), d = b(1) = top. which order is different with popn.
+#[macro_export]
+macro_rules! backn {
+    ([$($x:ident),*], $interpreter:expr $(,$ret:item)?) => {
+        let Some([$( $x ),*]) = $interpreter.stack.backn::<{ count!($($x),*) }>() else {
+            $interpreter.halt($crate::InstructionResult::StackUnderflow);
+            return $($ret)?;
+        };
+    }
 }
 
 #[doc(hidden)]

@@ -26,6 +26,9 @@ context-interface.workspace = true
 # optional
 serde = { workspace = true, features = ["derive", "rc"], optional = true }
 
+# Jumpmap
+bitvec = { workspace = true, features = ["alloc"] }
+
 [dev-dependencies]
 bincode.workspace = true
 

@@ -26,6 +26,7 @@ pub mod system;
 pub mod tx_info;
 /// Utility functions and helpers for instruction implementation.
 pub mod utility;
+mod complex;
 
 use crate::{interpreter_types::InterpreterTypes, Host, InstructionContext};
 
@@ -246,6 +247,40 @@ const fn instruction_table_impl<WIRE: InterpreterTypes, H: Host>() -> [Instructi
     table[REVERT as usize] = Instruction::new(control::revert, 0);
     table[INVALID as usize] = Instruction::new(control::invalid, 0);
     table[SELFDESTRUCT as usize] = Instruction::new(host::selfdestruct, 0); // dynamic
+    table
+}
+
+/// Returns the superinstruction table for the given spec.
+pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host+?Sized>(
+)    -> [Instruction<WIRE, H>; 256] {
+    use bytecode::opcode::*;
+    let mut table = instruction_table();
+    table[ANDSWAP1POPSWAP2SWAP1 as usize] = complex::and_swap1_pop_swap2_swap1;
+    table[SNOP as usize] = complex::snop;
+    table[SWAP2SWAP1POPJUMP as usize] = complex::swap2_swap1_pop_jump;
+    table[SWAP1POPSWAP2SWAP1 as usize] = complex::swap1_pop_swap2_swap1;
+    table[POPSWAP2SWAP1POP as usize] = complex::pop_swap2_swap1_pop;
+    table[PUSH2JUMP as usize] = complex::push2_jump;
+    table[PUSH2JUMPI as usize] = complex::push2_jumpi;
+    table[PUSH1PUSH1 as usize] = complex::push1_push1;
+    table[PUSH1ADD as usize] = complex::push1_add;
+    table[PUSH1SHL as usize] = complex::push1_shl;
+    table[PUSH1DUP1 as usize] = complex::push1_dup1;
+    table[SWAP1POP as usize] = complex::swap1_pop;
+    table[POPJUMP as usize] = complex::pop_jump;
+    table[POP2 as usize] = complex::pop2;
+    table[SWAP2SWAP1 as usize] = complex::swap2_swap1;
+    table[SWAP2POP as usize] = complex::swap2_pop;
+    table[DUP2LT as usize] = complex::dup2_lt;
+    table[ISZEROPUSH2 as usize] = complex::iszero_push2;
+    table[JUMPIFZERO as usize] = complex::jump_if_zero;
+    table[DUP2MSTOREPUSH1ADD as usize] = complex::dup2_mstore_push1_add;
+    table[DUP1PUSH4EQPUSH2 as usize] = complex::dup1_push4_eq_push2;
+    table[PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = complex::push1_calldataload_push1_shr_dup1_push4_gt_push2;
+    table[PUSH1PUSH1PUSH1SHLSUB as usize] = complex::push1_push1_push1_shl_sub;
+    table[ANDDUP2ADDSWAP1DUP2LT as usize] = complex::and_dup2_add_swap1_dup2_lt;
+    table[SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT as usize] =
+        complex::swap1_push1_dup1_not_swap2_add_and_dup2_add_swap1_dup2_lt;
     table
 }
 

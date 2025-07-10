@@ -23,6 +23,8 @@ pub struct ExtBytecode {
     pub action: Option<InterpreterAction>,
     /// The base bytecode.
     base: Bytecode,
+    //  for si, this is the origin version
+    origin: Bytecode,
 }
 
 impl Deref for ExtBytecode {
@@ -59,10 +61,25 @@ impl ExtBytecode {
     #[inline]
     pub fn new_with_optional_hash(base: Bytecode, hash: Option<B256>) -> Self {
         let instruction_pointer = base.bytecode_ptr();
+        let origin = base.clone();
         Self {
             base,
             instruction_pointer,
             bytecode_hash: hash,
+            origin,
+            action: None,
+            continue_execution: true,
+        }
+    }
+
+    /// Creates new `ExtBytecode` with the given hash.
+    pub fn new_si_with_hash(base: Bytecode, origin: Bytecode, hash: B256) -> Self {
+        let instruction_pointer = base.bytecode_ptr();
+        Self {
+            base,
+            instruction_pointer,
+            origin,
+            bytecode_hash: Some(hash),
             action: None,
             continue_execution: true,
         }
@@ -205,7 +222,7 @@ impl LegacyBytecode for ExtBytecode {
     }
 
     fn bytecode_slice(&self) -> &[u8] {
-        self.base.original_byte_slice()
+        self.origin.original_byte_slice()
     }
 }
 

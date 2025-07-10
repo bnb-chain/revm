@@ -571,69 +571,32 @@ opcodes! {
     // 0xAE
     // 0xAF
     // 0xB0
-    // 0xB1
-    // 0xB2
-    // 0xB3
-    // 0xB4
-    // 0xB5
-    // 0xB6
-    // 0xB7
-    // 0xB8
-    // 0xB9
-    // 0xBA
-    // 0xBB
-    // 0xBC
-    // 0xBD
-    // 0xBE
-    // 0xBF
-    // 0xC0
-    // 0xC1
-    // 0xC2
-    // 0xC3
-    // 0xC4
-    // 0xC5
-    // 0xC6
-    // 0xC7
-    // 0xC8
-    // 0xC9
-    // 0xCA
-    // 0xCB
-    // 0xCC
-    // 0xCD
-    // 0xCE
-    // 0xCF
-    // 0xD0
-    // 0xD1
-    // 0xD2
-    // 0xD3
-    // 0xD4
-    // 0xD5
-    // 0xD6
-    // 0xD7
-    // 0xD8
-    // 0xD9
-    // 0xDA
-    // 0xDB
-    // 0xDC
-    // 0xDD
-    // 0xDE
-    // 0xDF
-    // 0xE0
-    // 0xE1
-    // 0xE2
-    // 0xE3
-    // 0xE4
-    // 0xE5
-    // 0xE6
-    // 0xE7
-    // 0xE8
-    // 0xE9
-    // 0xEA
-    // 0xEB
-    // 0xEC
-    // 0xED
-    // 0xEE
-    // 0xEF
+    0xB0 => SNOP => stack_io(0, 0);
+    0xB1 => ANDSWAP1POPSWAP2SWAP1 => stack_io(2, 0);
+    0xB2 => SWAP2SWAP1POPJUMP      => stack_io(3, 3);
+    0xB3 => SWAP1POPSWAP2SWAP1         => stack_io(4, 4);
+    0xB4 => POPSWAP2SWAP1POP           => stack_io(4, 4);
+    0xB5 => PUSH2JUMP                  => stack_io(1, 1), immediate_size(2);
+    0xB6 => PUSH2JUMPI                 => stack_io(1, 2), immediate_size(2);
+    0xB7 => PUSH1PUSH1                 => stack_io(0, 2);
+    0xB8 => PUSH1ADD                   => stack_io(1, 1);
+    0xB9 => PUSH1SHL                   => stack_io(1, 1);
+    0xBA => PUSH1DUP1                  => stack_io(0, 2);
+    0xBB => SWAP1POP                   => stack_io(1, 0);
+    0xBC => POPJUMP                    => stack_io(1, 0);
+    0xBD => POP2                       => stack_io(2, 0);
+    0xBE => SWAP2SWAP1                 => stack_io(3, 3);
+    0xBF => SWAP2POP                   => stack_io(3, 2);
+    0xC0 => DUP2LT                     => stack_io(2, 2);
+    0xC1 => JUMPIFZERO                 => stack_io(1, 0);
+    0xC2 => ISZEROPUSH2                => stack_io(1, 1);
+    0xC3 => DUP2MSTOREPUSH1ADD         => stack_io(2, 1);
+    0xC4 => DUP1PUSH4EQPUSH2           => stack_io(1, 2);
+    0xC5 => PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2    => stack_io(0, 5);
+    0xC6 => PUSH1PUSH1PUSH1SHLSUB               => stack_io(0, 3);
+    0xC7 => ANDDUP2ADDSWAP1DUP2LT      => stack_io(0, 3);
+    0xC8 => SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT          => stack_io(1, 4);
+
     0xF0 => CREATE       => stack_io(3, 1);
     0xF1 => CALL         => stack_io(7, 1);
     0xF2 => CALLCODE     => stack_io(7, 1);
@@ -700,6 +663,8 @@ mod tests {
             0x80..=0x8f,
             0x90..=0x9f,
             0xa0..=0xa4,
+            0xb0..=0xbf,
+            0xc0..=0xc8,
             0xf0..=0xf5,
             0xfa..=0xfa,
             0xfd..=0xfd,
@@ -719,7 +684,7 @@ mod tests {
         for _ in OPCODE_INFO.into_iter().flatten() {
             opcode_num += 1;
         }
-        assert_eq!(opcode_num, 150);
+        assert_eq!(opcode_num, 175);
     }
 
     #[test]

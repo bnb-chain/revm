@@ -27,6 +27,10 @@ context.workspace = true
 primitives.workspace = true
 state.workspace = true
 bytecode.workspace = true
+once_cell = "1"
+parking_lot = "0.12"
+lru = "0.12"
+thiserror = "1"
 
 auto_impl.workspace = true
 derive-where.workspace = true

@@ -23,6 +23,14 @@ pub fn analyze_legacy(bytecode: Bytes) -> (JumpTable, Bytes) {
 
     while iterator < end {
         opcode = unsafe { *iterator };
+
+        // for si
+        if let Some(steps) = unsafe {code_bitmap_for_si(&mut jumps, opcode, iterator.offset_from(start) as usize) } {
+            iterator = unsafe { iterator.add(steps) };
+            continue
+        }
+        // end for si
+
         if opcode == opcode::JUMPDEST {
             // SAFETY: Jumps are max length of the code
             unsafe { jumps.set_unchecked(iterator.offset_from(start) as usize, true) }
@@ -52,9 +60,51 @@ pub fn analyze_legacy(bytecode: Bytes) -> (JumpTable, Bytes) {
     (JumpTable::new(jumps), bytecode)
 }
 
+#[warn(unused_unsafe)]
+fn code_bitmap_for_si(jumps: &mut BitVec<u8, Lsb0>, code: u8, pos: usize) -> Option<usize> {
+    match code {
+        opcode::PUSH2JUMP | opcode::PUSH2JUMPI => {Some(4)}
+
+        opcode::PUSH1PUSH1 => {Some(4)}
+
+        opcode::PUSH1ADD | opcode::PUSH1SHL | opcode::PUSH1DUP1 => {Some(3)}
+
+        opcode::JUMPIFZERO => {Some(5)}
+
+        opcode::ISZEROPUSH2 => {Some(4)}
+
+        opcode::DUP2MSTOREPUSH1ADD => {Some(5)}
+
+        opcode::DUP1PUSH4EQPUSH2 => {Some(10)}
+
+        opcode::PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 => {Some(16)}
+
+        opcode::PUSH1PUSH1PUSH1SHLSUB => {Some(8)}
+
+        opcode:: SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT => {Some(13)}
+
+        // opcode::SWAP2Sw
+
+        _ => {None}
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use primitives::hex::FromHex;
+
     use super::*;
+
+    #[test]
+    fn test_analyze_legacy() {
+        let (jp1, bt1) = analyze_legacy(Bytes::from_hex("82b5016eb05b6101b386").unwrap());
+        // println!("{:?}, {:?}", jp, bt);
+
+        let (jp2, bt2) = analyze_legacy(Bytes::from_hex("8261016e565b6101b386").unwrap());
+        // println!("{:?}, {:?}", jp, bt);
+        assert_eq!(jp1, jp2);
+        assert_ne!(bt1, bt2);
+    }
 
     #[test]
     fn test_bytecode_ends_with_stop_no_padding_needed() {

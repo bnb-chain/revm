@@ -104,6 +104,8 @@ pub struct CfgEnv<SPEC = SpecId> {
     /// By default, it is set to `false`.
     #[cfg(feature = "optional_priority_fee_check")]
     pub disable_priority_fee_check: bool,
+    /// By default, it is set to `false`
+    pub enable_superinstruction: bool,
 }
 
 impl CfgEnv {
@@ -159,6 +161,7 @@ impl<SPEC> CfgEnv<SPEC> {
             disable_base_fee: false,
             #[cfg(feature = "optional_priority_fee_check")]
             disable_priority_fee_check: false,
+            enable_superinstruction: false,
         }
     }
 
@@ -206,6 +209,7 @@ impl<SPEC> CfgEnv<SPEC> {
             disable_base_fee: self.disable_base_fee,
             #[cfg(feature = "optional_priority_fee_check")]
             disable_priority_fee_check: self.disable_priority_fee_check,
+            enable_superinstruction: false,
         }
     }
 
@@ -343,6 +347,10 @@ impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
                 false
             }
         }
+    }
+
+    fn enable_superinstruction(&self) -> bool {
+        self.enable_superinstruction
     }
 }
 

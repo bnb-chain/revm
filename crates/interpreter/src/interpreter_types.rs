@@ -150,6 +150,7 @@ pub trait MemoryTr {
 
 /// Functions needed for Interpreter Stack operations.
 pub trait StackTr {
+    fn data(&self) -> &Vec<U256>;
     /// Returns stack length.
     fn len(&self) -> usize;
 
@@ -229,6 +230,10 @@ pub trait StackTr {
     /// Returns `true` if duplicate was successful, `false` if stack underflow.
     #[must_use]
     fn dup(&mut self, n: usize) -> bool;
+
+    /// the follow is for superinstructions. topn
+    #[must_use]
+    fn backn<const N: usize>(&mut self) -> Option<[&mut U256; N]>;
 }
 
 /// Returns return data.

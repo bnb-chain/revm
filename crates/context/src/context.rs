@@ -128,6 +128,11 @@ impl<
     fn tx_local_mut(&mut self) -> (&Self::Tx, &mut Self::Local) {
         (&self.tx, &mut self.local)
     }
+
+    #[inline]
+    fn enable_superinstruction(&mut self) -> bool {
+        self.cfg.enable_superinstruction()
+    }
 }
 
 impl<

@@ -95,6 +95,17 @@ impl StackTr for Stack {
     fn push_slice(&mut self, slice: &[u8]) -> bool {
         self.push_slice_(slice)
     }
+
+    #[inline]
+    fn backn<const N: usize>(&mut self) -> Option<[&mut U256; N]> {
+        unsafe {
+            self.backn()
+        }
+    }
+
+    fn data(&self) -> &Vec<U256> {
+        self.data()
+    }
 }
 
 impl Stack {
@@ -185,6 +196,19 @@ impl Stack {
     pub unsafe fn popn<const N: usize>(&mut self) -> [U256; N] {
         assume!(self.data.len() >= N);
         core::array::from_fn(|_| unsafe { self.pop_unsafe() })
+    }
+
+    /// Tops `N` values from the stack.
+    #[inline]
+    #[cfg_attr(debug_assertions, track_caller)]
+    pub unsafe fn backn<const N: usize>(&mut self) -> Option<[&mut U256; N]> {
+        if self.len() < N {
+            return None;
+        }
+        let len = self.data.len();
+        let base_ptr = self.data.as_mut_ptr().add(len - N);
+        // SAFETY: indices are in-bounds and unique, derived from raw pointer, so no aliasing.
+        Some(core::array::from_fn(|i| unsafe { &mut *base_ptr.add(i) }))
     }
 
     /// Pops `N` values from the stack and returns the top of the stack.

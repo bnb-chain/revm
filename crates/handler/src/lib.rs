@@ -30,6 +30,9 @@ mod precompile_provider;
 pub mod system_call;
 /// Transaction and environment validation utilities.
 pub mod validation;
+mod opcode_async;
+mod opcode_cache;
+mod opcode_optimizer;
 
 // Public exports
 pub use api::{ExecuteCommitEvm, ExecuteEvm};
