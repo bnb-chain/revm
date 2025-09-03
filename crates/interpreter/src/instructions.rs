@@ -255,8 +255,10 @@ pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host+?Sized>(
 )    -> [Instruction<WIRE, H>; 256] {
     use bytecode::opcode::*;
     let mut table = instruction_table();
-    table[ANDSWAP1POPSWAP2SWAP1 as usize] = complex::and_swap1_pop_swap2_swap1;
+    
+    // All superinstructions 0xB0-0xCF
     table[SNOP as usize] = complex::snop;
+    table[ANDSWAP1POPSWAP2SWAP1 as usize] = complex::and_swap1_pop_swap2_swap1;
     table[SWAP2SWAP1POPJUMP as usize] = complex::swap2_swap1_pop_jump;
     table[SWAP1POPSWAP2SWAP1 as usize] = complex::swap1_pop_swap2_swap1;
     table[POPSWAP2SWAP1POP as usize] = complex::pop_swap2_swap1_pop;
@@ -272,8 +274,8 @@ pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host+?Sized>(
     table[SWAP2SWAP1 as usize] = complex::swap2_swap1;
     table[SWAP2POP as usize] = complex::swap2_pop;
     table[DUP2LT as usize] = complex::dup2_lt;
-    table[ISZEROPUSH2 as usize] = complex::iszero_push2;
     table[JUMPIFZERO as usize] = complex::jump_if_zero;
+    table[ISZEROPUSH2 as usize] = complex::iszero_push2;
     table[DUP2MSTOREPUSH1ADD as usize] = complex::dup2_mstore_push1_add;
     table[DUP1PUSH4EQPUSH2 as usize] = complex::dup1_push4_eq_push2;
     table[PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = complex::push1_calldataload_push1_shr_dup1_push4_gt_push2;
@@ -281,6 +283,15 @@ pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host+?Sized>(
     table[ANDDUP2ADDSWAP1DUP2LT as usize] = complex::and_dup2_add_swap1_dup2_lt;
     table[SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT as usize] =
         complex::swap1_push1_dup1_not_swap2_add_and_dup2_add_swap1_dup2_lt;
+    
+    // New fused instructions from Go example (0xC9-0xCF)
+    table[DUP3AND as usize] = complex::dup3_and;
+    table[SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] = complex::swap2_swap1_dup3_sub_swap2_dup3_gt_push2;
+    table[SWAP1DUP2 as usize] = complex::swap1_dup2;
+    table[SHRSHRDUP1MULDUP1 as usize] = complex::shr_shr_dup1_mul_dup1;
+    table[SWAP3POPPOPPOP as usize] = complex::swap3_pop_pop_pop;
+    table[SUBSLTISZEROPUSH2 as usize] = complex::sub_slt_iszero_push2;
+    table[DUP11MULDUP3SUBMULDUP1 as usize] = complex::dup11_mul_dup3_sub_mul_dup1;
     table
 }
 

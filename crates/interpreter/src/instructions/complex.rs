@@ -2,12 +2,18 @@ use crate::{
     gas,
     interpreter_types::{InterpreterTypes, StackTr, Jumps, Immediates, MemoryTr, InputsTr},
     InstructionContext,
+    instructions::i256::i256_cmp,
 };
 use primitives::{U256, B256};
 use crate::InstructionResult;
 
 use core::ptr;
 use crate::interpreter_action::CallInput;
+
+use std::time::{Duration, Instant};
+use std::hint::black_box;
+
+// ============================ Super-Instructions ============================
 
 pub(super)fn and_swap1_pop_swap2_swap1<WIRE: InterpreterTypes, H: ?Sized>(
     context: InstructionContext<'_, H, WIRE>,
@@ -569,11 +575,268 @@ pub(super)fn and_dup2_add_swap1_dup2_lt<WIRE: InterpreterTypes, H: ?Sized>(
     context.interpreter.bytecode.relative_jump(5);
 }
 
+// ============================ New Fused Instructions from Go Example ============================
+
+/// Fused instruction: DUP3 AND
+/// Takes the 3rd element from stack top, performs AND with top element
+/// x := scope.Stack.data[scope.Stack.len()-3], y := scope.Stack.peek(), y.And(&x, y)
+pub(super) fn dup3_and<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    gas!(context.interpreter, gas::VERYLOW * 2);
+    
+    backn!([b3, b2, b1], context.interpreter);
+    *b1 = *b1 & *b3; 
+    context.interpreter.bytecode.relative_jump(1);
+}
+
+/// Fused instruction: SWAP2 SWAP1 DUP3 SUB SWAP2 DUP3 GT PUSH2
+/// This is a complex sequence that performs stack manipulation and comparison
+//  Initial stack: [c, d, e] (top = c, 2nd = d, 3rd = e)
+//
+// #	Opcode	What it does (top-first)	                                Before	                                 After
+// 1	SWAP2	Swap top and 3rd items  (a,b,c → c,b,a)	                    [c, d, e]                                [e, d, c]
+// 2	SWAP1	Swap top and 2nd items (a,b → b,a)	                        [e, d, c]	                             [d, e, c]
+// 3	DUP3	Duplicate the 3rd item (from top) and push it on top	    [d, e, c]                    	         [c, d, e, c]
+// 4	SUB	Pop a (top) and b (next), push a − b (wraps mod 2²⁵⁶)	        [c, d, e, c]	                         [c − d, e, c]
+// 5	SWAP2	Swap top and 3rd items	                                    [c − d, e, c]	                         [c, e, c − d]
+// 6	DUP3	Duplicate the 3rd item and push it on top	                [c, e, c − d]	                         [c − d, c, e, c − d]
+// 7	GT	Pop a (top) and b (next), push 1 if a > b (unsigned), else 0	[c − d, c, e, c − d]	                 [(c − d) > c ? 1 : 0, e, c − d]
+// 8	PUSH2	Read next 2 bytes as a big-endian immediate and push it	    [(c − d) > c ? 1 : 0, e, c − d]	         [imm16, (c − d) > c ? 1 : 0, e, c − d]
+
+pub(super) fn swap2_swap1_dup3_sub_swap2_dup3_gt_push2<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    gas!(context.interpreter, 8 * gas::VERYLOW);
+
+    // Grab mutable refs to [third, second, top] (deep -> shallow).
+    backn!([third, second, top], context.interpreter);
+
+    // Snapshot originals before we overwrite.
+    let orig_top = *top;       // t1
+    let orig_second = *second; // t2
+    let orig_third = *third;   // t3
+
+    // Final third = (t1 - t2) with EVM wrap semantics.
+    *third = orig_top.wrapping_sub(orig_second);
+
+    // Final second = original third.
+    *second = orig_third;
+
+    // Final top = ((t1 - t2) > t1) ? 1 : 0 (unsigned).
+    *top = if *third > orig_top { U256::ONE } else { U256::ZERO };
+
+    // Skip 7 remaining opcodes after the first one (auto-jump handles the first)
+    context.interpreter.bytecode.relative_jump(7);
+
+    // PUSH2: read immediate and push.
+    let imm = context.interpreter.bytecode.read_slice(2);
+    let value = U256::from_be_slice(imm);
+    push!(context.interpreter, value);
+
+    // Skip the 2 immediate bytes.
+    context.interpreter.bytecode.relative_jump(2);
+}
+
+
+/// Fused instruction: SWAP1 DUP2
+/// Swaps top two elements then duplicates the second element
+/// Fused: SWAP1 ; DUP2
+/// Start: [a, b, c, …]
+//
+// #	Opcode	What it does	        Before	         After
+// 1	SWAP1	Swap top & 2nd	        [a, b, c, …]	[b, a, c, …]
+// 2	DUP2	Duplicate 2nd to top	[b, a, c, …]	[a, b, a, c, …]
+pub(super) fn swap1_dup2<WIRE: InterpreterTypes, H: ?Sized>( // todo needs improvement
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    gas!(context.interpreter, 2 * gas::VERYLOW);
+
+    // backn! handles underflow + early return; faster than len() + two calls
+    backn!([second, top], context.interpreter);
+
+    // SWAP1
+    core::mem::swap(top, second);
+
+    // DUP2 (after swap, 2nd-from-top is *second)
+    let copy = *second;
+    push!(context.interpreter, copy);
+
+    // skip the single padding byte after the fused opcode
+    context.interpreter.bytecode.relative_jump(1);
+}
+
+/// Fused instruction: SHR SHR DUP1 MUL DUP1
+/// Performs two right shifts, duplicates result, multiplies, then duplicates again
+/// Fused: SHR ; SHR ; DUP1 ; MUL ; DUP1
+/// | # | Opcode | What it does     | Before                | After                                   |
+// | - | ------ | ---------------- | --------------------- | --------------------------------------- |
+// | 1 | `SHR`  | `(v1 >> s1)`     | `[s1, v1, s2, v2, …]` | `[r1, s2, v2, …]` where `r1 = v1 >> s1` |
+// | 2 | `SHR`  | `s2 >> r1`       | `[r1, s2, v2, …]`     | `[r2, v2, …]` where `r2 = s2 >> r1`     |
+// | 3 | `DUP1` | duplicate top    | `[r2, v2, …]`         | `[r2, r2, v2, …]`                       |
+// | 4 | `MUL`  | multiply top two | `[r2, r2, v2, …]`     | `[r2*r2, v2, …]`                        |
+// | 5 | `DUP1` | duplicate top    | `[r2*r2, v2, …]`      | `[r2*r2, r2*r2, v2, …]`                 |
+pub(super) fn shr_shr_dup1_mul_dup1<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    // 2*SHR(VL) + DUP1(VL) + MUL(LOW) + DUP1(VL)
+    gas!(context.interpreter, 4 * gas::VERYLOW + gas::LOW);
+
+    // First SHR: pop shift, value -> r1
+    popn!([s1, v1], context.interpreter);
+    let r1 = if s1 < U256::from(256) {
+        let n = s1.as_limbs()[0] as usize;
+        v1 >> n
+    } else {
+        U256::ZERO
+    };
+
+    // Second SHR: apply r1 as shift to current top (s2); below it is v2
+    backn!([v2, s2], context.interpreter); // v2 = second, s2 = top
+    *s2 = if r1 < U256::from(256) {
+        let n = r1.as_limbs()[0] as usize;
+        *s2 >> n
+    } else {
+        U256::ZERO
+    };
+
+    // DUP1; MUL → square top
+    let t = *s2;
+    *s2 = t.wrapping_mul(t);
+
+    // Final DUP1
+    if !context.interpreter.stack.dup(1) {
+        context.interpreter.halt(InstructionResult::StackOverflow);
+        return;
+    }
+
+    // Five single-byte opcodes
+    context.interpreter.bytecode.relative_jump(4);
+}
+
+///Start: [a, b, c, d, e, …]
+///| # | Opcode  | What it does   | Before               | After                |
+// | - | ------- | -------------- | -------------------- | -------------------- |
+// | 1 | `SWAP3` | swap top & 4th | `[a, b, c, d, e, …]` | `[d, b, c, a, e, …]` |
+// | 2 | `POP`   | drop top       | `[d, b, c, a, e, …]` | `[b, c, a, e, …]`    |
+// | 3 | `POP`   | drop top       | `[b, c, a, e, …]`    | `[c, a, e, …]`       |
+// | 4 | `POP`   | drop top       | `[c, a, e, …]`       | `[a, e, …]`          |
+/// Fused: SWAP3 ; POP ; POP ; POP
+pub(super) fn swap3_pop_pop_pop<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    gas!(context.interpreter, gas::VERYLOW + 3 * gas::BASE);
+    
+    // Pop original top four: a, b, c, d
+    popn!([a, _b, _c, _d], context.interpreter);
+
+    // Push back original top (a); stack now [a, e, …]
+    push!(context.interpreter, a);
+
+    // Four single-byte opcodes
+    context.interpreter.bytecode.relative_jump(3);
+}
+
+
+// /// Fused instruction: SUB SLT ISZERO PUSH2
+// /// Performs subtraction, signed less than, is zero check, then pushes 2-byte immediate
+pub(super) fn sub_slt_iszero_push2<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    // SUB (verylow) + SLT (verylow) + ISZERO (verylow) + PUSH2 (verylow) = 4 * VERYLOW
+    gas!(context.interpreter, 4 * gas::VERYLOW);
+
+    // Grab top 3 stack items by REF:
+    // z_slot = 3rd from top (will hold the final result),
+    // y_slot = 2nd from top,
+    // x_slot = top.
+    backn!([z_slot, y_slot, x_slot], context.interpreter);
+
+    // Copy values for arithmetic
+    let x = *x_slot;
+    let y = *y_slot;
+    let z = *z_slot;
+
+    // SUB: x - y
+    let sub_result = x.wrapping_sub(y);
+
+    // SLT (signed): (x - y) < z  ? 1 : 0
+    let slt = if i256_cmp(&sub_result, &z) == core::cmp::Ordering::Less {
+        U256::ONE
+    } else {
+        U256::ZERO
+    };
+
+    // ISZERO
+    let iszero = if slt.is_zero() { U256::ONE } else { U256::ZERO };
+
+    // Overwrite the 3rd-from-top slot with the final result,
+    // then drop the top two original slots (x, y) to reduce 3→1.
+    *z_slot = iszero;
+    popn!([_drop1, _drop2], context.interpreter);
+
+    // With step auto-jump: step advances 1, then we advance 3 to reach immediate bytes
+    context.interpreter.bytecode.relative_jump(3);
+
+    // Execute PUSH2: read the 2-byte immediate and push it  
+    let imm = context.interpreter.bytecode.read_slice(2);
+    let value = U256::from_be_slice(imm);
+    push!(context.interpreter, value);
+
+    // Skip the immediate bytes to end of fused instruction
+    context.interpreter.bytecode.relative_jump(2);
+}
+
+/// Fused instruction: DUP11 MUL DUP3 SUB MUL DUP1
+/// Duplicates 11th element, multiplies, duplicates 3rd, subtracts, multiplies, duplicates result
+// Fused: DUP11 ; MUL ; DUP3 ; SUB ; MUL ; DUP1
+/// | # | Opcode  | What it does     | Before                   | After                                       |
+// | - | ------- | ---------------- | ------------------------ | ------------------------------------------- |
+// | 1 | `DUP11` | copy 11th to top | `[a1,a2,a3,…,a11,a12,…]` | `[a11,a1,a2,a3,…,a11,a12,…]`                |
+// | 2 | `MUL`   | multiply top two | `[a11,a1,a2,…]`          | `[m,a2,a3,…,a11,a12,…]` where `m=a11*a1`    |
+// | 3 | `DUP3`  | copy 3rd to top  | `[m,a2,a3,…]`            | `[a3,m,a2,a3,a4,…]`                         |
+// | 4 | `SUB`   | `a3 - m`         | `[a3,m,a2,a3,…]`         | `[a3-m,a2,a3,a4,…]`                         |
+// | 5 | `MUL`   | `(a3-m)*a2`      | `[a3-m,a2,a3,…]`         | `[r,a3,a4,…,a11,a12,…]` where `r=(a3-m)*a2` |
+// | 6 | `DUP1`  | duplicate top    | `[r,a3,a4,…]`            | `[r,r,a3,a4,…,a11,a12,…]`                   |
+/// Fused: DUP11 ; MUL ; DUP3 ; SUB ; MUL ; DUP1
+pub(super) fn dup11_mul_dup3_sub_mul_dup1<WIRE: InterpreterTypes, H: ?Sized>(
+    context: InstructionContext<'_, H, WIRE>,
+) {
+    // DUP11(VL) + MUL(LOW) + DUP3(VL) + SUB(VL) + MUL(LOW) + DUP1(VL)
+    gas!(context.interpreter, 4 * gas::VERYLOW + 2 * gas::LOW);
+
+    let len = context.interpreter.stack.len();
+    if len < 11 {
+        context.interpreter.halt(InstructionResult::StackUnderflow);
+        return;
+    }
+
+    // Grab a11 (11th from top) by value
+    let a11 = context.interpreter.stack.data()[len - 11];
+
+    // Pop the two that will be consumed by the two MULs (a1, a2)
+    popn!([a1, a2], context.interpreter);
+
+    // Current top is a3; compute r = (a3 - a11*a1) * a2 without disturbing a3 underneath result.
+    backn!([a3], context.interpreter);
+    let m = a11.wrapping_mul(a1);
+    let r = a3.wrapping_sub(m).wrapping_mul(a2);
+
+    // Push r on top (above a3), then DUP1 to match final shape [r, r, a3, …]
+    push!(context.interpreter, r);
+    if !context.interpreter.stack.dup(1) {
+        context.interpreter.halt(InstructionResult::StackOverflow);
+        return;
+    }
+
+    // Five remaining opcodes after the first one (auto-jump handles the first)
+    context.interpreter.bytecode.relative_jump(5);
+}
 
 #[cfg(test)]
 mod fused_tests {
     use super::*;
-    use crate::{interpreter, InstructionContext};
+    use crate::InstructionContext;
     use crate::interpreter::{Interpreter, EthInterpreter, ExtBytecode};
     use crate::instructions::{bitwise, stack, control, arithmetic, memory, system};
     use bitvec::{bitvec, order::Lsb0, vec::BitVec};
@@ -592,6 +855,8 @@ mod fused_tests {
 
     fn make_interp_with_jump(len: usize, jump_loc: usize) -> Interp {
         let mut i = Interp::default_ext();
+        // Set up gas for testing (enough for all operations)
+        i.gas = crate::Gas::new(1000000);
         let mut jumps: BitVec<u8> = bitvec![u8, Lsb0; 0; len];
         unsafe {jumps.set_unchecked(jump_loc, true) }
         let mut v = vec![0u8; len];
@@ -1149,4 +1414,797 @@ mod fused_tests {
         assert_eq!(interp.stack.top().unwrap(), &U256::from(123u64));
     }
 
+    // ============================ Tests for the 7 new fused functions ============================
+
+    #[test]
+    fn test_dup3_and() { // passing
+        // Test fused function
+        let (mut interp_fused, pc_fused) = run(make_interp(2), |ip| {
+            // Setup stack: [0x0F, 0xF0, 0x33] (bottom to top)
+            let _ = ip.stack.push(U256::from(0x0Fu8)); // 3rd from top
+            let _ = ip.stack.push(U256::from(0xF0u8)); // 2nd from top  
+            let _ = ip.stack.push(U256::from(0x33u8)); // top
+            dup3_and(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Test reference implementation: DUP3 + AND
+        let (mut interp_ref, _pc_ref) = run(make_interp(2), |ip| {
+            // Setup identical stack
+            let _ = ip.stack.push(U256::from(0x0Fu8));
+            let _ = ip.stack.push(U256::from(0xF0u8));
+            let _ = ip.stack.push(U256::from(0x33u8));
+            
+            // DUP3: duplicate 3rd element to top
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            // AND: bitwise and of top two elements
+            bitwise::bitand(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Gas comparison
+        let gas_fused = interp_fused.gas.spent();
+        let gas_ref = interp_ref.gas.spent();
+        
+        // Functional correctness
+        assert_eq!(pc_fused, 1);
+        assert_eq!(interp_fused.stack.top().unwrap(), &U256::from(0x03u8));
+        assert_eq!(interp_fused.stack, interp_ref.stack, "Stack states should be identical");
+        
+        // Gas efficiency: fused should use same or less gas
+        assert!(gas_fused <= gas_ref, "Fused function used {} gas, reference used {} gas", gas_fused, gas_ref);
+    }
+
+    #[test] 
+    fn test_swap1_dup2() { // passing
+        // Test fused function
+        let (mut interp_fused, pc_fused) = run(make_interp(2), |ip| {
+            // Setup stack: [1, 2] (bottom to top)
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+            swap1_dup2(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Test reference implementation: SWAP1 + DUP2
+        let (mut interp_ref, _pc_ref) = run(make_interp(2), |ip| {
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+            stack::swap::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<2, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Gas comparison
+        let gas_fused = interp_fused.gas.spent();
+        let gas_ref = interp_ref.gas.spent();
+
+        // Functional correctness
+        assert_eq!(pc_fused, 1);
+        assert_eq!(interp_fused.stack.len(), 3);
+        assert_eq!(interp_fused.stack.top().unwrap(), &U256::from(2u8)); // duplicated 2nd element
+        assert_eq!(interp_fused.stack, interp_ref.stack, "Stack states should be identical");
+
+        // Gas efficiency: fused should use same or less gas
+        assert!(gas_fused <= gas_ref, "Fused function used {} gas, reference used {} gas", gas_fused, gas_ref);
+    }
+
+    #[test]
+    fn test_shr_shr_dup1_mul_dup1_0() { // passing
+        let (mut interp, pc) = run(make_interp(5), |ip| {
+            // Setup stack to match Go test: [1,2,3,3,1,2,3,3,1,2,3,3] (12 elements)
+            for i in 0..4 {
+                let _ = ip.stack.push(U256::from(1)); 
+                let _ = ip.stack.push(U256::from(2)); 
+                let _ = ip.stack.push(U256::from(3)); 
+                let _ = ip.stack.push(U256::from(3)); 
+            }
+            shr_shr_dup1_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Run the equivalent individual operations to compare
+        let (mut interp2, pc2) = run(make_interp(5), |ip| {
+            for i in 0..4 {
+                let _ = ip.stack.push(U256::from(1)); 
+                let _ = ip.stack.push(U256::from(2)); 
+                let _ = ip.stack.push(U256::from(3)); 
+                let _ = ip.stack.push(U256::from(3)); 
+            }
+            // SHR SHR DUP1 MUL DUP1
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: ip });
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        assert_eq!(interp.stack.len(), interp2.stack.len());
+        assert_eq!(interp.stack, interp2.stack);
+    }
+
+    #[test]
+    fn test_shr_shr_dup1_mul_dup1() {
+        // Initial stack (bottom → top):
+        //   0x10 (value₂) , 0x02 (shift₂) , 0x08 (value₁) , 0x01 (shift₁)
+        let (mut interp_fused, pc_fused) = run(make_interp(5), |ip| {
+            let _ = ip.stack.push(U256::from(0x10u8));
+            let _ = ip.stack.push(U256::from(0x02u8));
+            let _ = ip.stack.push(U256::from(0x08u8));
+            let _ = ip.stack.push(U256::from(0x01u8));
+            shr_shr_dup1_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        let (mut interp_ref, pc_ref) = run(make_interp(5), |ip| {
+            let _ = ip.stack.push(U256::from(0x10u8));
+            let _ = ip.stack.push(U256::from(0x02u8));
+            let _ = ip.stack.push(U256::from(0x08u8));
+            let _ = ip.stack.push(U256::from(0x01u8));
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: ip });
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // After the sequence the stack should be:
+        //   bottom … 0x10 , 0x00 , 0x00 (top two equal) and pc advanced by 4
+        assert_eq!(interp_fused.stack, interp_ref.stack);
+        assert_eq!(pc_fused, 4);
+    }
+
+    #[test]
+    fn test_swap3_pop_pop_pop() { // passing
+        // Test fused function
+        let (mut interp_fused, pc_fused) = run(make_interp(4), |ip| {
+            // Setup stack: [1, 2, 3, 4] (bottom to top)
+            let _ = ip.stack.push(U256::from(1u8)); // 4th from top (will become top after SWAP3)
+            let _ = ip.stack.push(U256::from(2u8)); // 3rd from top (will be popped)
+            let _ = ip.stack.push(U256::from(3u8)); // 2nd from top (will be popped) 
+            let _ = ip.stack.push(U256::from(4u8)); // top (will be popped)
+            swap3_pop_pop_pop(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Test reference implementation: individual operations
+        let (mut interp_ref, _pc_ref) = run(make_interp(4), |ip| {
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+            let _ = ip.stack.push(U256::from(3u8));
+            let _ = ip.stack.push(U256::from(4u8));
+            // SWAP3: exchange top with 4th element 
+            stack::swap::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            // POP: remove 3 elements
+            stack::pop(InstructionContext { host: &mut (), interpreter: ip });
+            stack::pop(InstructionContext { host: &mut (), interpreter: ip });
+            stack::pop(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Gas comparison
+        let gas_fused = interp_fused.gas.spent();
+        let gas_ref = interp_ref.gas.spent();
+
+        // Functional correctness
+        assert_eq!(pc_fused, 3);
+        assert_eq!(interp_fused.stack.len(), interp_ref.stack.len());
+        assert_eq!(interp_fused.stack, interp_ref.stack, "Stack states should be identical");
+
+        // Gas efficiency: fused should use same or less gas
+        assert!(gas_fused <= gas_ref, "Fused function used {} gas, reference used {} gas", gas_fused, gas_ref);
+    }
+
+    #[test]
+    fn test_sub_slt_iszero_push2_matches_reference() {
+        use primitives::U256;
+        use std::time::Instant;
+        // one of these two, depending on your re-exports:
+        use bytecode::{Bytecode};
+        use crate::interpreter::ExtBytecode;
+
+        // Bytecode layout so that after skipping 3 bytes, the next 2 are the PUSH2 immediate
+        // (dummy leading bytes stand in for the SUB/SLT/ISZERO opcodes in real bytecode)
+        let make_bc = || ExtBytecode::new(Bytecode::new_raw(vec![0x00, 0x00, 0x00, 0x12, 0x34].into()));
+
+        // Build identical initial stacks: bottom→top = [ z=2, y=5, x=3 ]
+        let build_stack = |ip: &mut Interpreter| {
+            let _ = ip.stack.push(U256::from(2u8)); // z
+            let _ = ip.stack.push(U256::from(5u8)); // y
+            let _ = ip.stack.push(U256::from(3u8)); // x
+        };
+
+        // Fused - with timing
+        let start_fused = Instant::now();
+        let (interp_fused, pc_fused) = run(make_interp(7), |ip| {
+            ip.bytecode = make_bc();
+            build_stack(ip);
+            // Simulate step's auto-jump: advance PC by 1 to match step execution
+            // ip.bytecode.relative_jump(1);
+            sub_slt_iszero_push2(InstructionContext { host: &mut (), interpreter: ip });
+        });
+        let fused_duration = start_fused.elapsed();
+
+        // Reference path: SUB; SLT; ISZERO; PUSH2 - with timing
+        let start_ref = Instant::now();
+        let (interp_ref, _pc_ref) = run(make_interp(7), |ip| {
+            ip.bytecode = make_bc();
+            build_stack(ip);
+
+            // SUB (x - y)
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: ip });
+            // SLT (signed): z < (x-y)
+            crate::instructions::bitwise::slt(InstructionContext { host: &mut (), interpreter: ip });
+            // ISZERO
+            bitwise::iszero(InstructionContext { host: &mut (), interpreter: ip });
+            
+            // Skip to the PUSH2 immediate (at positions 3-4 in 5-byte bytecode)
+            ip.bytecode.relative_jump(3);
+            // PUSH2 immediate (read 2 bytes and push)
+            let imm = ip.bytecode.read_slice(2);
+            let val = U256::from_be_slice(imm);
+            let _ = ip.stack.push(val);
+        });
+        let ref_duration = start_ref.elapsed();
+
+        // Print timing results
+        println!("Fused approach time: {:?}", fused_duration);
+        println!("Non-fused (reference) approach time: {:?}", ref_duration);
+        println!("Performance ratio (ref/fused): {:.2}", ref_duration.as_nanos() as f64 / fused_duration.as_nanos() as f64);
+
+        // With step simulation: PC=1 + relative_jump(2) + relative_jump(2) = PC=5
+        assert_eq!(pc_fused, 5);
+
+        // Full-stack equality
+        assert_eq!(interp_fused.stack, interp_ref.stack);
+
+        // Optional explicit checks for clarity:
+        let data = interp_fused.stack.data();
+        assert_eq!(data.len(), 2);                         // net -1 effect
+        assert_eq!(data[0], U256::ZERO);                   // ISZERO(SLT(2, 3-5)) = ISZERO(1) = 0
+        assert_eq!(data[1], U256::from(0x1234u16));        // PUSH2
+    }
+
+
+    #[test] 
+    fn test_dup11_mul_dup3_sub_mul_dup1_matches_reference() {
+        use primitives::U256;
+        
+        // Build identical initial stacks: [1,2,3,4,5,6,7,8,9,10,11,12] bottom to top
+        let build_stack = |ip: &mut Interpreter| {
+            for i in 0..12 {
+                let _ = ip.stack.push(U256::from(i + 1)); // [1,2,3,...,12] bottom to top
+            }
+        };
+        
+        // Fused
+        let (interp_fused, pc_fused) = run(make_interp(6), |ip| {
+            build_stack(ip);
+            dup11_mul_dup3_sub_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+        });
+        
+        // Reference path: DUP11; MUL; DUP3; SUB; MUL; DUP1
+        let (interp_ref, _pc_ref) = run(make_interp(6), |ip| {
+            build_stack(ip);
+            
+            // DUP11: duplicate 11th element from top
+            stack::dup::<11, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            // MUL: multiply top two elements
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            // DUP3: duplicate 3rd element from top
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            // SUB: subtract top two elements
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: ip });
+            // MUL: multiply top two elements  
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            // DUP1: duplicate top element
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+        
+        // Fused must skip 5 bytes (as implemented in the function)
+        assert_eq!(pc_fused, 5);
+        
+        // Full-stack equality
+        assert_eq!(interp_fused.stack, interp_ref.stack);
+        
+        // Optional explicit checks for stack structure
+        let data = interp_fused.stack.data();
+        // Net stack effect: initial 12 elements, DUP11 (+1), MUL (-1), DUP3 (+1), SUB (-1), MUL (-1), DUP1 (+1) = 12
+        
+        // Verify DUP1 worked correctly - last two elements should be identical
+        assert_eq!(data[data.len()-1], data[data.len()-2]);
+    }
+
+    #[test]
+    fn test_dup11_mul_dup3_sub_mul_dup1_matches_reference2() {
+        use primitives::U256;
+
+        // Build identical initial stacks: [1..12] bottom→top
+        let build_stack = |ip: &mut Interpreter| {
+            for i in 1..=12 {
+                let _ = ip.stack.push(U256::from(i));
+            }
+        };
+
+        // Fused
+        let (interp_fused, pc_fused) = run(make_interp(6), |ip| {
+            build_stack(ip);
+            dup11_mul_dup3_sub_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Reference: DUP11; MUL; DUP3; SUB; MUL; DUP1
+        let (interp_ref, _pc_ref) = run(make_interp(6), |ip| {
+            build_stack(ip);
+            stack::dup::<11, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Fused must skip 5 bytes (we executed the whole 6-op bundle)
+        assert_eq!(pc_fused, 5);
+
+        // Full-stack equality
+        assert_eq!(interp_fused.stack, interp_ref.stack);
+
+        // Sanity: last two equal (DUP1)
+        let data = interp_fused.stack.data();
+        assert_eq!(data[data.len()-1], data[data.len()-2]);
+    }
+
+
+    #[test]
+    fn test_swap2_swap1_dup3_sub_swap2_dup3_gt_push2() {
+        // Test fused function
+        let (interp_fused, pc_fused) = run(make_interp(11), |ip| {
+            // Setup bytecode to match Go test: [0x91,0x90,0x82,0x3,0x91,0x82,0x11,0x61,0x1,0x2]
+            ip.bytecode = ExtBytecode::new(Bytecode::new_raw(vec![0x91,0x90,0x82,0x3,0x91,0x82,0x11,0x61,0x1,0x2].into()));
+            
+            // Setup stack to match Go test: [1,2,3,3,1,2,3,3,1,2,3,3] (12 elements) 
+            for _i in 0..4 {
+                let _ = ip.stack.push(U256::from(1)); 
+                let _ = ip.stack.push(U256::from(2)); 
+                let _ = ip.stack.push(U256::from(3)); 
+                let _ = ip.stack.push(U256::from(3)); 
+            }
+            
+            // Simulate step's auto-jump: advance PC by 1 to match step execution
+            ip.bytecode.relative_jump(1);
+            swap2_swap1_dup3_sub_swap2_dup3_gt_push2(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Test reference implementation: individual operations
+        let (interp_ref, _pc_ref) = run(make_interp(11), |ip| {
+            ip.bytecode = ExtBytecode::new(Bytecode::new_raw(vec![0x91,0x90,0x82,0x3,0x91,0x82,0x11,0x61,0x1,0x2].into()));
+            for _i in 0..4 {
+                let _ = ip.stack.push(U256::from(1)); 
+                let _ = ip.stack.push(U256::from(2)); 
+                let _ = ip.stack.push(U256::from(3)); 
+                let _ = ip.stack.push(U256::from(3)); 
+            }
+            // SWAP2 SWAP1 DUP3 SUB SWAP2 DUP3 GT PUSH2
+            stack::swap::<2, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            stack::swap::<1, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: ip });
+            stack::swap::<2, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+            bitwise::gt(InstructionContext { host: &mut (), interpreter: ip });
+            ip.bytecode.relative_jump(8); // skip to PUSH2 immediate
+            stack::push::<2, _, _>(InstructionContext { host: &mut (), interpreter: ip });
+        });
+
+        // Gas comparison
+        let gas_fused = interp_fused.gas.spent();
+        let gas_ref = interp_ref.gas.spent();
+
+        // Functional correctness  
+        assert_eq!(pc_fused, 10); // Start at 1 + relative_jump(7) + relative_jump(2) = 1+7+2 = 10
+        assert_eq!(interp_fused.stack.len(), interp_ref.stack.len());
+        assert_eq!(interp_fused.stack, interp_ref.stack, "Stack states should be identical");
+
+        // Gas efficiency: fused should use same or less gas
+        assert!(gas_fused <= gas_ref, "Fused function used {} gas, reference used {} gas", gas_fused, gas_ref);
+    }
+
+    ///// Timed //////
+
+    #[test]
+    fn time_swap2_swap1_dup3_sub_swap2_dup3_gt_push2_timing() {
+        // Enough iterations to smooth noise; adjust if slow on your box.
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            // Setup fresh interpreter + state (excluded from timing)
+            let mut ip = make_interp(11);
+            ip.bytecode = ExtBytecode::new(Bytecode::new_raw(
+                vec![0x91,0x90,0x82,0x03,0x91,0x82,0x11,0x61,0x01,0x02].into()
+            ));
+            for _ in 0..4 {
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(2));
+                let _ = ip.stack.push(U256::from(3));
+                let _ = ip.stack.push(U256::from(3));
+            }
+
+            // Time only the fused op
+            let start = Instant::now();
+            swap2_swap1_dup3_sub_swap2_dup3_gt_push2(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            // Prevent UB/over-optimizing away
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(11);
+            ip.bytecode = ExtBytecode::new(Bytecode::new_raw(
+                vec![0x91,0x90,0x82,0x03,0x91,0x82,0x11,0x61,0x01,0x02].into()
+            ));
+            for _ in 0..4 {
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(2));
+                let _ = ip.stack.push(U256::from(3));
+                let _ = ip.stack.push(U256::from(3));
+            }
+
+            let start = Instant::now();
+            // SWAP2 SWAP1 DUP3 SUB SWAP2 DUP3 GT PUSH2
+            stack::swap::<2, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::swap::<1, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::swap::<2, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            bitwise::gt(InstructionContext { host: &mut (), interpreter: &mut ip });
+
+            // Skip 7 fused bytes + 1 PUSH2 opcode before pushing 2-byte immediate.
+            ip.bytecode.relative_jump(8);
+            stack::push::<2, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        let fused_avg_ns = fused_total.as_nanos() as f64 / ITERS as f64;
+        let ref_avg_ns   = ref_total.as_nanos() as f64 / ITERS as f64;
+
+        eprintln!("FUSED   total = {:?}, avg = {:.2} ns/iter", fused_total, fused_avg_ns);
+        eprintln!("REF     total = {:?}, avg = {:.2} ns/iter", ref_total, ref_avg_ns);
+
+        // (Optional) sanity check: fused should not be slower than reference
+        assert!(fused_total <= ref_total, "Fused slower: {:.2} ns vs {:.2} ns", fused_avg_ns, ref_avg_ns);
+    }
+
+    #[test]
+    fn time_dup3_and_timing() { // dup3_and FUSED = 14.231854ms, REF = 35.497975ms
+        use primitives::U256;
+
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(2);
+            let _ = ip.stack.push(U256::from(0x0Fu8));
+            let _ = ip.stack.push(U256::from(0xF0u8));
+            let _ = ip.stack.push(U256::from(0x33u8));
+
+            let start = Instant::now();
+            dup3_and(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(2);
+            let _ = ip.stack.push(U256::from(0x0Fu8));
+            let _ = ip.stack.push(U256::from(0xF0u8));
+            let _ = ip.stack.push(U256::from(0x33u8));
+
+            let start = Instant::now();
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            bitwise::bitand(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("dup3_and FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        assert!(fused_total <= ref_total, "Fused slower: {:?} vs {:?}", fused_total, ref_total);
+    }
+
+    #[test]
+    fn time_swap1_dup2_timing() { // swap1_dup2 FUSED = 11.490199ms, REF = 9.365927ms
+        use primitives::U256;
+
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(2);
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+
+            let start = Instant::now();
+            swap1_dup2(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(2);
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+
+            let start = Instant::now();
+            stack::swap::<1, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<2, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("swap1_dup2 FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        assert!(fused_total <= ref_total, "Fused slower: {:?} vs {:?}", fused_total, ref_total);
+    }
+
+    #[test]
+    fn time_shr_shr_dup1_mul_dup1_bulk_timing() { // shr_shr_dup1_mul_dup1 (bulk) FUSED = 52.078976ms, REF = 62.054462ms
+        use primitives::U256;
+
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(5);
+            for _ in 0..4 {
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(2));
+                let _ = ip.stack.push(U256::from(3));
+                let _ = ip.stack.push(U256::from(3));
+            }
+
+            let start = Instant::now();
+            shr_shr_dup1_mul_dup1(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(5);
+            for _ in 0..4 {
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(2));
+                let _ = ip.stack.push(U256::from(3));
+                let _ = ip.stack.push(U256::from(3));
+            }
+
+            let start = Instant::now();
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: &mut ip });
+            bitwise::shr(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("shr_shr_dup1_mul_dup1 (bulk) FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        // Allow up to 5% performance regression to account for timing noise
+        let tolerance = ref_total * 105 / 100;
+        assert!(fused_total <= tolerance, "Fused significantly slower: {:?} vs {:?} (tolerance: {:?})", fused_total, ref_total, tolerance);
+    }
+
+    #[test]
+    fn time_swap3_pop_pop_pop_timing() { // swap3_pop_pop_pop FUSED = 13.701338ms, REF = 18.307659ms
+        use primitives::U256;
+
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(4);
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+            let _ = ip.stack.push(U256::from(3u8));
+            let _ = ip.stack.push(U256::from(4u8));
+
+            let start = Instant::now();
+            swap3_pop_pop_pop(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(4);
+            let _ = ip.stack.push(U256::from(1u8));
+            let _ = ip.stack.push(U256::from(2u8));
+            let _ = ip.stack.push(U256::from(3u8));
+            let _ = ip.stack.push(U256::from(4u8));
+
+            let start = Instant::now();
+            stack::swap::<3, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::pop(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::pop(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::pop(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("swap3_pop_pop_pop FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        assert!(fused_total <= ref_total, "Fused slower: {:?} vs {:?}", fused_total, ref_total);
+    }
+
+    #[test]
+    fn time_sub_slt_iszero_push2_timing() { // sub_slt_iszero_push2 FUSED = 26.702218ms, REF = 32.368462ms
+        use primitives::U256;
+        use bytecode::Bytecode;
+        use crate::interpreter::ExtBytecode;
+
+        const ITERS: usize = 50_000;
+
+        let make_bc = || ExtBytecode::new(Bytecode::new_raw(vec![0x00, 0x00, 0x00, 0x12, 0x34].into()));
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(7);
+            ip.bytecode = make_bc();
+            let _ = ip.stack.push(U256::from(2u8)); // z
+            let _ = ip.stack.push(U256::from(5u8)); // y
+            let _ = ip.stack.push(U256::from(3u8)); // x
+
+            let start = Instant::now();
+            sub_slt_iszero_push2(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(7);
+            ip.bytecode = make_bc();
+            let _ = ip.stack.push(U256::from(2u8)); // z
+            let _ = ip.stack.push(U256::from(5u8)); // y
+            let _ = ip.stack.push(U256::from(3u8)); // x
+
+            let start = Instant::now();
+            // SUB (x - y)
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: &mut ip });
+            // SLT (signed): z < (x-y)
+            crate::instructions::bitwise::slt(InstructionContext { host: &mut (), interpreter: &mut ip });
+            // ISZERO
+            bitwise::iszero(InstructionContext { host: &mut (), interpreter: &mut ip });
+
+            // PUSH2 immediate at bytes 3..5
+            ip.bytecode.relative_jump(3);
+            let imm = ip.bytecode.read_slice(2);
+            let val = U256::from_be_slice(imm);
+            let _ = ip.stack.push(val);
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("sub_slt_iszero_push2 FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        assert!(fused_total <= ref_total, "Fused slower: {:?} vs {:?}", fused_total, ref_total);
+    }
+
+    #[test]
+    fn time_dup11_mul_dup3_sub_mul_dup1_timing() { // dup11_mul_dup3_sub_mul_dup1 FUSED = 32.827196ms, REF = 45.886887ms
+        use primitives::U256;
+
+        const ITERS: usize = 50_000;
+
+        // --- FUSED ---
+        let mut fused_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(6);
+            for i in 1..=12 {
+                let _ = ip.stack.push(U256::from(i));
+            }
+
+            let start = Instant::now();
+            dup11_mul_dup3_sub_mul_dup1(InstructionContext { host: &mut (), interpreter: &mut ip });
+            fused_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        // --- REFERENCE ---
+        let mut ref_total = Duration::ZERO;
+        for _ in 0..ITERS {
+            let mut ip = make_interp(6);
+            for i in 1..=12 {
+                let _ = ip.stack.push(U256::from(i));
+            }
+
+            let start = Instant::now();
+            stack::dup::<11, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<3, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            arithmetic::sub(InstructionContext { host: &mut (), interpreter: &mut ip });
+            arithmetic::mul(InstructionContext { host: &mut (), interpreter: &mut ip });
+            stack::dup::<1, _, _>(InstructionContext { host: &mut (), interpreter: &mut ip });
+            ref_total += start.elapsed();
+
+            black_box(&ip);
+        }
+
+        eprintln!("dup11_mul_dup3_sub_mul_dup1 FUSED = {:?}, REF = {:?}", fused_total, ref_total);
+        assert!(fused_total <= ref_total, "Fused slower: {:?} vs {:?}", fused_total, ref_total);
+    }
+
+    // Helper function for PC tests
+    fn make_interp_with_bytecode(bytes: Vec<u8>) -> Interp {
+        let mut i = Interp::default_ext();
+        let dummy = Bytecode::new_legacy(Bytes::from(bytes));
+        i.bytecode = ExtBytecode::new(dummy);
+        i
+    }
+
+    #[test]
+    fn test_fused_instruction_pc_advancement() {
+        // Test each fused function's PC advancement without immediates
+        // Note: These are called DIRECTLY, not through step(), so there's no auto-jump
+        // The functions use relative_jump(N-1) expecting to be called via step() which adds 1
+        let test_cases: &[(&str, usize, fn(&mut Interp))] = &[
+            ("DUP3AND", 1, |ip: &mut Interp| {  // 2 opcodes, relative_jump(1) = PC 1
+                let _ = ip.stack.push(U256::from(0x0F));
+                let _ = ip.stack.push(U256::from(0xF0)); 
+                let _ = ip.stack.push(U256::from(0x33));
+                dup3_and(InstructionContext { host: &mut (), interpreter: ip });
+            }),
+            ("SWAP1DUP2", 1, |ip: &mut Interp| {  // 2 opcodes, relative_jump(1) = PC 1
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(2));
+                swap1_dup2(InstructionContext { host: &mut (), interpreter: ip });
+            }),
+            ("SHRSHRDUP1MULDUP1", 4, |ip: &mut Interp| {  // 5 opcodes, relative_jump(4) = PC 4
+                let _ = ip.stack.push(U256::from(3));
+                let _ = ip.stack.push(U256::from(2));
+                let _ = ip.stack.push(U256::from(1));
+                let _ = ip.stack.push(U256::from(4));
+                shr_shr_dup1_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+            }),
+            ("SWAP3POPPOPPOP", 3, |ip: &mut Interp| {  // 4 opcodes, relative_jump(3) = PC 3
+                for i in 1..=5 { let _ = ip.stack.push(U256::from(i)); }
+                swap3_pop_pop_pop(InstructionContext { host: &mut (), interpreter: ip });
+            }),
+            ("DUP11MULDUP3SUBMULDUP1", 5, |ip: &mut Interp| {  // 6 opcodes, relative_jump(5) = PC 5
+                for i in 1..=12 { let _ = ip.stack.push(U256::from(i)); }
+                dup11_mul_dup3_sub_mul_dup1(InstructionContext { host: &mut (), interpreter: ip });
+            }),
+        ];
+
+        for &(name, expected_pc, test_fn) in test_cases {
+            let (_interp, final_pc) = run(make_interp(20), test_fn);
+            
+            // PC should advance by N-1 for N-byte instructions (direct call, no auto-jump)
+            assert_eq!(
+                final_pc, 
+                expected_pc,
+                "{}: PC should advance by {} bytes (direct call), but advanced by {} bytes", 
+                name, expected_pc, final_pc
+            );
+        }
+    }
 }

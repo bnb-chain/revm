@@ -578,10 +578,10 @@ opcodes! {
     0xB4 => POPSWAP2SWAP1POP           => stack_io(4, 4);
     0xB5 => PUSH2JUMP                  => stack_io(1, 1), immediate_size(2);
     0xB6 => PUSH2JUMPI                 => stack_io(1, 2), immediate_size(2);
-    0xB7 => PUSH1PUSH1                 => stack_io(0, 2);
-    0xB8 => PUSH1ADD                   => stack_io(1, 1);
-    0xB9 => PUSH1SHL                   => stack_io(1, 1);
-    0xBA => PUSH1DUP1                  => stack_io(0, 2);
+    0xB7 => PUSH1PUSH1                 => stack_io(0, 2), immediate_size(3);
+    0xB8 => PUSH1ADD                   => stack_io(1, 1), immediate_size(1);
+    0xB9 => PUSH1SHL                   => stack_io(1, 1), immediate_size(1);
+    0xBA => PUSH1DUP1                  => stack_io(0, 2), immediate_size(1);
     0xBB => SWAP1POP                   => stack_io(1, 0);
     0xBC => POPJUMP                    => stack_io(1, 0);
     0xBD => POP2                       => stack_io(2, 0);
@@ -589,13 +589,22 @@ opcodes! {
     0xBF => SWAP2POP                   => stack_io(3, 2);
     0xC0 => DUP2LT                     => stack_io(2, 2);
     0xC1 => JUMPIFZERO                 => stack_io(1, 0);
-    0xC2 => ISZEROPUSH2                => stack_io(1, 1);
-    0xC3 => DUP2MSTOREPUSH1ADD         => stack_io(2, 1);
-    0xC4 => DUP1PUSH4EQPUSH2           => stack_io(1, 2);
-    0xC5 => PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2    => stack_io(0, 5);
-    0xC6 => PUSH1PUSH1PUSH1SHLSUB               => stack_io(0, 3);
+    0xC2 => ISZEROPUSH2                => stack_io(1, 1), immediate_size(2);
+    0xC3 => DUP2MSTOREPUSH1ADD         => stack_io(2, 1), immediate_size(3);
+    0xC4 => DUP1PUSH4EQPUSH2           => stack_io(1, 2), immediate_size(6);
+    0xC5 => PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2    => stack_io(0, 5), immediate_size(15);
+    0xC6 => PUSH1PUSH1PUSH1SHLSUB               => stack_io(0, 3), immediate_size(7);
     0xC7 => ANDDUP2ADDSWAP1DUP2LT      => stack_io(0, 3);
-    0xC8 => SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT          => stack_io(1, 4);
+    0xC8 => SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT          => stack_io(1, 4), immediate_size(1);
+    
+    // New fused instructions
+    0xC9 => DUP3AND                    => stack_io(3, 2);
+    0xCA => SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 => stack_io(3, 3), immediate_size(2);
+    0xCB => SWAP1DUP2                  => stack_io(2, 3);
+    0xCC => SHRSHRDUP1MULDUP1          => stack_io(3, 3);
+    0xCD => SWAP3POPPOPPOP             => stack_io(4, 1);
+    0xCE => SUBSLTISZEROPUSH2          => stack_io(3, 2), immediate_size(2);
+    0xCF => DUP11MULDUP3SUBMULDUP1     => stack_io(11, 10);
 
     0xF0 => CREATE       => stack_io(3, 1);
     0xF1 => CALL         => stack_io(7, 1);
@@ -636,6 +645,21 @@ mod tests {
         for push in PUSH1..=PUSH32 {
             expected[push as usize] = push - PUSH1 + 1;
         }
+        // Fused opcodes with immediate bytes
+        expected[PUSH2JUMP as usize] = 2;
+        expected[PUSH2JUMPI as usize] = 2;
+        expected[PUSH1PUSH1 as usize] = 3;
+        expected[PUSH1ADD as usize] = 1;
+        expected[PUSH1SHL as usize] = 1;
+        expected[PUSH1DUP1 as usize] = 1;
+        expected[ISZEROPUSH2 as usize] = 2;
+        expected[DUP2MSTOREPUSH1ADD as usize] = 3;
+        expected[DUP1PUSH4EQPUSH2 as usize] = 6;
+        expected[PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = 15;
+        expected[PUSH1PUSH1PUSH1SHLSUB as usize] = 7;
+        expected[SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT as usize] = 1;
+        expected[SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] = 2;
+        expected[SUBSLTISZEROPUSH2 as usize] = 2;
 
         for (i, opcode) in OPCODE_INFO.iter().enumerate() {
             if let Some(opcode) = opcode {
@@ -684,7 +708,7 @@ mod tests {
         for _ in OPCODE_INFO.into_iter().flatten() {
             opcode_num += 1;
         }
-        assert_eq!(opcode_num, 175);
+        assert_eq!(opcode_num, 182);
     }
 
     #[test]

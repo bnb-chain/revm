@@ -5,7 +5,7 @@ use bytecode::opcode as op;
 
 pub(crate) const MIN_OPTIMIZED_OPCODE: u8 = 0xB0;
 /// superinstruction max opcode
-pub(crate) const MAX_OPTIMIZED_OPCODE: u8 = 0xCF;
+pub(crate) const MAX_OPTIMIZED_OPCODE: u8 = 0xD0;
 
 /// FailPreprocessing Fusion err
 #[derive(Debug, Error)]
@@ -83,6 +83,30 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         }
 
         // ----------------------------
+        // 10-byte 
+        // SWAP2 SWAP1 DUP3 SUB SWAP2 DUP3 GT PUSH2 _ _
+        // ----------------------------
+        if cur + 9 < fused.len() {
+            let c = |o: usize| fused[cur + o];
+            if c(0) == op::SWAP2
+                && c(1) == op::SWAP1
+                && c(2) == op::DUP3
+                && c(3) == op::SUB
+                && c(4) == op::SWAP2
+                && c(5) == op::DUP3
+                && c(6) == op::GT
+                && c(7) == op::PUSH2
+            {
+                fused[cur] = op::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2;
+                for off in [1, 2, 3, 4, 5, 6, 7] {
+                    fused[cur + off] = op::SNOP;
+                }
+                i += 10;
+                continue;
+            }
+        }
+
+        // ----------------------------
         // 9-byte 
         // DUP1 PUSH4 _ _ _ _ EQ PUSH2 _ _
         // ----------------------------
@@ -120,10 +144,12 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         }
 
         // ----------------------------
-        // 6-byte (AND DUP2 ADD SWAP1 DUP2 LT)
+        // 6-byte patterns
         // ----------------------------
         if cur + 5 < fused.len() {
             let c = |o: usize| fused[cur + o];
+            
+            // AND DUP2 ADD SWAP1 DUP2 LT
             if c(0) == op::AND
                 && c(1) == op::DUP2
                 && c(2) == op::ADD
@@ -138,16 +164,64 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
                 i += 6;
                 continue;
             }
+            
+            // SUB SLT ISZERO PUSH2 _ _
+            if c(0) == op::SUB
+                && c(1) == op::SLT
+                && c(2) == op::ISZERO
+                && c(3) == op::PUSH2
+            {
+                fused[cur] = op::SUBSLTISZEROPUSH2;
+                for off in [1, 2, 3] {
+                    fused[cur + off] = op::SNOP;
+                }
+                i += 6;  // Skip the opcode + 2 immediate bytes
+                continue;
+            }
+            
+            // DUP11 MUL DUP3 SUB MUL DUP1
+            if c(0) == op::DUP11
+                && c(1) == op::MUL
+                && c(2) == op::DUP3
+                && c(3) == op::SUB
+                && c(4) == op::MUL
+                && c(5) == op::DUP1
+            {
+                fused[cur] = op::DUP11MULDUP3SUBMULDUP1;
+                for off in [1, 2, 3, 4, 5] {
+                    fused[cur + off] = op::SNOP;
+                }
+                i += 6;
+                continue;
+            }
         }
 
         // ----------------------------
-        // （1）AND SWAP1 POP SWAP2 SWAP1
-        // （2）ISZERO PUSH2 _ _ JUMPI  ➜ JUMPIFZERO
-        // （3）DUP2 MSTORE PUSH1 _ ADD ➜ DUP2MSTOREPUSH1ADD
+        // 5-byte patterns
+        // SHR SHR DUP1 MUL DUP1
+        // AND SWAP1 POP SWAP2 SWAP1
+        // ISZERO PUSH2 _ _ JUMPI  ➜ JUMPIFZERO
+        // DUP2 MSTORE PUSH1 _ ADD ➜ DUP2MSTOREPUSH1ADD
         // ----------------------------
         if cur + 4 < fused.len() {
             let c = |o: usize| fused[cur + o];
-            // (1)
+            
+            // SHR SHR DUP1 MUL DUP1
+            if c(0) == op::SHR
+                && c(1) == op::SHR
+                && c(2) == op::DUP1
+                && c(3) == op::MUL
+                && c(4) == op::DUP1
+            {
+                fused[cur] = op::SHRSHRDUP1MULDUP1;
+                for off in [1, 2, 3, 4] {
+                    fused[cur + off] = op::SNOP;
+                }
+                i += 5;
+                continue;
+            }
+            
+            // （1）AND SWAP1 POP SWAP2 SWAP1
             if c(0) == op::AND
                 && c(1) == op::SWAP1
                 && c(2) == op::POP
@@ -161,7 +235,7 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
                 i += 5;
                 continue;
             }
-            // (2)
+            // （2）ISZERO PUSH2 _ _ JUMPI  ➜ JUMPIFZERO
             if c(0) == op::ISZERO && c(1) == op::PUSH2 && c(4) == op::JUMPI {
                 fused[cur] = op::JUMPIFZERO;
                 for off in [1, 4] {
@@ -170,7 +244,7 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
                 i += 5;
                 continue;
             }
-            // (3)
+            // （3）DUP2 MSTORE PUSH1 _ ADD ➜ DUP2MSTOREPUSH1ADD
             if c(0) == op::DUP2 && c(1) == op::MSTORE && c(2) == op::PUSH1 && c(4) == op::ADD {
                 fused[cur] = op::DUP2MSTOREPUSH1ADD;
                 for off in [1, 2, 4] {
@@ -182,6 +256,8 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         }
 
         // ----------------------------
+        // 4-byte patterns
+        // SWAP3 POP POP POP     ➜ SWAP3POPPOPPOP
         // SWAP2 SWAP1 POP JUMP  ➜ SWAP2SWAP1POPJUMP
         // SWAP1 POP SWAP2 SWAP1 ➜ SWAP1POPSWAP2SWAP1
         // POP SWAP2 SWAP1 POP   ➜ POPSWAP2SWAP1POP
@@ -192,6 +268,17 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         // ----------------------------
         if cur + 3 < fused.len() {
             let c = |o: usize| fused[cur + o];
+            
+            // (SWAP3 POP POP POP)
+            if c(0) == op::SWAP3 && c(1) == op::POP && c(2) == op::POP && c(3) == op::POP {
+                fused[cur] = op::SWAP3POPPOPPOP;
+                for off in [1, 2, 3] {
+                    fused[cur + off] = op::SNOP;
+                }
+                i += 4;
+                continue;
+            }
+            
             // (SWAP2 SWAP1 POP JUMP)
             if c(0) == op::SWAP2 && c(1) == op::SWAP1 && c(2) == op::POP && c(3) == op::JUMP {
                 fused[cur] = op::SWAP2SWAP1POPJUMP;
@@ -280,6 +367,9 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         }
 
         // ----------------------------
+        // 2-byte patterns
+        // DUP3 AND         ➜ DUP3AND
+        // SWAP1 DUP2       ➜ SWAP1DUP2
         // SWAP1 POP        ➜ SWAP1POP
         // POP JUMP         ➜ POPJUMP
         // POP POP          ➜ POP2
@@ -290,6 +380,23 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
         if cur + 1 < fused.len() {
             let inst0 = fused[cur];
             let inst1 = fused[cur + 1];
+            
+            // DUP3 AND
+            if inst0 == op::DUP3 && inst1 == op::AND {
+                fused[cur] = op::DUP3AND;
+                fused[cur + 1] = op::SNOP;
+                i += 2;
+                continue;
+            }
+            
+            // SWAP1 DUP2
+            if inst0 == op::SWAP1 && inst1 == op::DUP2 {
+                fused[cur] = op::SWAP1DUP2;
+                fused[cur + 1] = op::SNOP;
+                i += 2;
+                continue;
+            }
+            
             if inst0 == op::SWAP1 && inst1 == op::POP {
                 fused[cur] = op::SWAP1POP;
                 fused[cur + 1] = op::SNOP;
@@ -350,6 +457,9 @@ fn calculate_skip_steps(code: &[u8], cur: usize) -> Option<usize> {
         op::PUSH1PUSH1 => Some(3),                 // push1 imm1 + 1 (NOP)
         op::PUSH1ADD | op::PUSH1SHL | op::PUSH1DUP1 => Some(2),
         op::JUMPIFZERO => Some(4), // PUSH2 imm16 + NOP JUMPI replaced
+        // New fused opcodes with immediates
+        op::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 => Some(9), // includes PUSH2 immediate
+        op::SUBSLTISZEROPUSH2 => Some(5), // includes PUSH2 immediate
         _ => None,
     }
 }
