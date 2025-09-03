@@ -113,11 +113,7 @@ macro_rules! resize_memory {
 macro_rules! popn {
     ([ $($x:ident),* ],$interpreter:expr $(,$ret:expr)? ) => {
         let Some([$( $x ),*]) = $interpreter.stack.popn() else {
-<<<<<<< HEAD
             $interpreter.halt_underflow();
-=======
-            $interpreter.halt($crate::InstructionResult::StackUnderflow);
->>>>>>> cd0fcd96 (test bug)
             return $($ret)?;
         };
     };

@@ -8,6 +8,7 @@ pub mod arithmetic;
 pub mod bitwise;
 /// Block information instructions (COINBASE, TIMESTAMP, etc.).
 pub mod block_info;
+mod complex;
 /// Contract operations (CALL, CREATE, DELEGATECALL, etc.).
 pub mod contract;
 /// Control flow instructions (JUMP, JUMPI, REVERT, etc.).
@@ -26,7 +27,6 @@ pub mod system;
 pub mod tx_info;
 /// Utility functions and helpers for instruction implementation.
 pub mod utility;
-mod complex;
 
 use crate::{interpreter_types::InterpreterTypes, Host, InstructionContext};
 
@@ -251,47 +251,57 @@ const fn instruction_table_impl<WIRE: InterpreterTypes, H: Host>() -> [Instructi
 }
 
 /// Returns the superinstruction table for the given spec.
-pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host+?Sized>(
-)    -> [Instruction<WIRE, H>; 256] {
+pub const fn superinstruction_table<WIRE: InterpreterTypes, H: Host>() -> [Instruction<WIRE, H>; 256]
+{
     use bytecode::opcode::*;
     let mut table = instruction_table();
-    
+
     // All superinstructions 0xB0-0xCF
-    table[SNOP as usize] = complex::snop;
-    table[ANDSWAP1POPSWAP2SWAP1 as usize] = complex::and_swap1_pop_swap2_swap1;
-    table[SWAP2SWAP1POPJUMP as usize] = complex::swap2_swap1_pop_jump;
-    table[SWAP1POPSWAP2SWAP1 as usize] = complex::swap1_pop_swap2_swap1;
-    table[POPSWAP2SWAP1POP as usize] = complex::pop_swap2_swap1_pop;
-    table[PUSH2JUMP as usize] = complex::push2_jump;
-    table[PUSH2JUMPI as usize] = complex::push2_jumpi;
-    table[PUSH1PUSH1 as usize] = complex::push1_push1;
-    table[PUSH1ADD as usize] = complex::push1_add;
-    table[PUSH1SHL as usize] = complex::push1_shl;
-    table[PUSH1DUP1 as usize] = complex::push1_dup1;
-    table[SWAP1POP as usize] = complex::swap1_pop;
-    table[POPJUMP as usize] = complex::pop_jump;
-    table[POP2 as usize] = complex::pop2;
-    table[SWAP2SWAP1 as usize] = complex::swap2_swap1;
-    table[SWAP2POP as usize] = complex::swap2_pop;
-    table[DUP2LT as usize] = complex::dup2_lt;
-    table[JUMPIFZERO as usize] = complex::jump_if_zero;
-    table[ISZEROPUSH2 as usize] = complex::iszero_push2;
-    table[DUP2MSTOREPUSH1ADD as usize] = complex::dup2_mstore_push1_add;
-    table[DUP1PUSH4EQPUSH2 as usize] = complex::dup1_push4_eq_push2;
-    table[PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = complex::push1_calldataload_push1_shr_dup1_push4_gt_push2;
-    table[PUSH1PUSH1PUSH1SHLSUB as usize] = complex::push1_push1_push1_shl_sub;
-    table[ANDDUP2ADDSWAP1DUP2LT as usize] = complex::and_dup2_add_swap1_dup2_lt;
-    table[SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT as usize] =
-        complex::swap1_push1_dup1_not_swap2_add_and_dup2_add_swap1_dup2_lt;
-    
+    table[SNOP as usize] = Instruction::new(complex::snop, 0);
+    table[ANDSWAP1POPSWAP2SWAP1 as usize] =
+        Instruction::new(complex::and_swap1_pop_swap2_swap1, 14);
+    table[SWAP2SWAP1POPJUMP as usize] = Instruction::new(complex::swap2_swap1_pop_jump, 16);
+    table[SWAP1POPSWAP2SWAP1 as usize] = Instruction::new(complex::swap1_pop_swap2_swap1, 11);
+    table[POPSWAP2SWAP1POP as usize] = Instruction::new(complex::pop_swap2_swap1_pop, 10);
+    table[PUSH2JUMP as usize] = Instruction::new(complex::push2_jump, 11);
+    table[PUSH2JUMPI as usize] = Instruction::new(complex::push2_jumpi, 13);
+    table[PUSH1PUSH1 as usize] = Instruction::new(complex::push1_push1, 6);
+    table[PUSH1ADD as usize] = Instruction::new(complex::push1_add, 6);
+    table[PUSH1SHL as usize] = Instruction::new(complex::push1_shl, 6);
+    table[PUSH1DUP1 as usize] = Instruction::new(complex::push1_dup1, 6);
+    table[SWAP1POP as usize] = Instruction::new(complex::swap1_pop, 5);
+    table[POPJUMP as usize] = Instruction::new(complex::pop_jump, 10);
+    table[POP2 as usize] = Instruction::new(complex::pop2, 4);
+    table[SWAP2SWAP1 as usize] = Instruction::new(complex::swap2_swap1, 6);
+    table[SWAP2POP as usize] = Instruction::new(complex::swap2_pop, 5);
+    table[DUP2LT as usize] = Instruction::new(complex::dup2_lt, 6);
+    table[JUMPIFZERO as usize] = Instruction::new(complex::jump_if_zero, 16);
+    table[ISZEROPUSH2 as usize] = Instruction::new(complex::iszero_push2, 6);
+    table[DUP2MSTOREPUSH1ADD as usize] = Instruction::new(complex::dup2_mstore_push1_add, 12);
+    table[DUP1PUSH4EQPUSH2 as usize] = Instruction::new(complex::dup1_push4_eq_push2, 12);
+    table[PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = Instruction::new(
+        complex::push1_calldataload_push1_shr_dup1_push4_gt_push2,
+        24,
+    );
+    table[PUSH1PUSH1PUSH1SHLSUB as usize] =
+        Instruction::new(complex::push1_push1_push1_shl_sub, 15);
+    table[ANDDUP2ADDSWAP1DUP2LT as usize] =
+        Instruction::new(complex::and_dup2_add_swap1_dup2_lt, 18);
+    table[SWAP1PUSH1DUP1NOTSWAP2ADDANDDUP2ADDSWAP1DUP2LT as usize] = Instruction::new(
+        complex::swap1_push1_dup1_not_swap2_add_and_dup2_add_swap1_dup2_lt,
+        36,
+    );
+
     // New fused instructions from Go example (0xC9-0xCF)
-    table[DUP3AND as usize] = complex::dup3_and;
-    table[SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] = complex::swap2_swap1_dup3_sub_swap2_dup3_gt_push2;
-    table[SWAP1DUP2 as usize] = complex::swap1_dup2;
-    table[SHRSHRDUP1MULDUP1 as usize] = complex::shr_shr_dup1_mul_dup1;
-    table[SWAP3POPPOPPOP as usize] = complex::swap3_pop_pop_pop;
-    table[SUBSLTISZEROPUSH2 as usize] = complex::sub_slt_iszero_push2;
-    table[DUP11MULDUP3SUBMULDUP1 as usize] = complex::dup11_mul_dup3_sub_mul_dup1;
+    table[DUP3AND as usize] = Instruction::new(complex::dup3_and, 6);
+    table[SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] =
+        Instruction::new(complex::swap2_swap1_dup3_sub_swap2_dup3_gt_push2, 24);
+    table[SWAP1DUP2 as usize] = Instruction::new(complex::swap1_dup2, 6);
+    table[SHRSHRDUP1MULDUP1 as usize] = Instruction::new(complex::shr_shr_dup1_mul_dup1, 17);
+    table[SWAP3POPPOPPOP as usize] = Instruction::new(complex::swap3_pop_pop_pop, 9);
+    table[SUBSLTISZEROPUSH2 as usize] = Instruction::new(complex::sub_slt_iszero_push2, 12);
+    table[DUP11MULDUP3SUBMULDUP1 as usize] =
+        Instruction::new(complex::dup11_mul_dup3_sub_mul_dup1, 22);
     table
 }
 
