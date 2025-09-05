@@ -3909,6 +3909,7 @@ dependencies = [
  "revm-state",
  "serde",
  "thiserror 1.0.69",
+ "tracing",
 ]
 
 [[package]]

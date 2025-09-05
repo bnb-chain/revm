@@ -5,7 +5,27 @@ use crate::{
 use auto_impl::auto_impl;
 use context::{ContextTr, Database, Evm, FrameStack};
 use context_interface::context::ContextError;
+use context::Cfg;
 use interpreter::{interpreter::EthInterpreter, interpreter_action::FrameInit, InterpreterResult};
+use tracing::info;
+
+/// 记录超级指令状态的辅助函数
+/// 
+/// 只在是首个frame时打印日志，避免过多输出
+#[inline]
+fn log_superinstruction_status<CTX: ContextTr>(ctx: &CTX, is_first_frame: bool) {
+    if !is_first_frame {
+        return;
+    }
+    
+    // 使用方法调用而不是trait bound
+    let cfg = ctx.cfg();
+    if cfg.enable_superinstruction() {
+        info!("🚀 超级指令优化已启用 - Superinstruction optimization is ENABLED");
+    } else {
+        info!("⚠️ 超级指令优化未启用 - Superinstruction optimization is DISABLED");
+    }
+}
 
 /// Type alias for database error within a context
 pub type ContextDbError<CTX> = ContextError<ContextTrDbError<CTX>>;
@@ -138,6 +158,9 @@ where
     /// Run the frame from the top of the stack. Returns the frame init or result.
     #[inline]
     fn frame_run(&mut self) -> Result<FrameInitOrResult<Self::Frame>, ContextDbError<CTX>> {
+        // 记录超级指令状态
+        log_superinstruction_status(&self.ctx, self.frame_stack.index().is_none());
+        
         let frame = self.frame_stack.get();
         let context = &mut self.ctx;
         let instructions = &mut self.instruction;

@@ -235,6 +235,31 @@ impl<SPEC> CfgEnv<SPEC> {
         self.disable_priority_fee_check = disable;
         self
     }
+    
+    /// Enables or disables the superinstruction optimization.
+    ///
+    /// Superinstructions combine common EVM instruction sequences
+    /// into single operations for better performance.
+    /// When enabled, REVM will use fused operations when possible.
+    /// 
+    /// # Examples
+    ///
+    /// ```
+    /// use revm::primitives::SpecId;
+    /// use revm::Context;
+    /// use revm::db::EmptyDB;
+    /// 
+    /// // Create an EVM instance with superinstructions enabled
+    /// let ctx = Context::new(EmptyDB::default(), SpecId::SHANGHAI)
+    ///     .with_superinstruction(true);
+    ///
+    /// assert!(ctx.cfg.enable_superinstruction());
+    /// ```
+    pub fn with_superinstruction(mut self, enable: bool) -> Self {
+        self.enable_superinstruction = enable;
+        self
+    }
+    
 }
 
 impl<SPEC: Into<SpecId> + Copy> Cfg for CfgEnv<SPEC> {
