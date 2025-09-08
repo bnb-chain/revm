@@ -11,19 +11,25 @@ use tracing::info;
 
 /// 记录超级指令状态的辅助函数
 /// 
-/// 只在是首个frame时打印日志，避免过多输出
+/// 记录当前执行上下文中超级指令的状态
 #[inline]
-fn log_superinstruction_status<CTX: ContextTr>(ctx: &CTX, is_first_frame: bool) {
-    if !is_first_frame {
-        return;
-    }
-    
-    // 使用方法调用而不是trait bound
+fn log_superinstruction_status<CTX: ContextTr>(ctx: &CTX) {
     let cfg = ctx.cfg();
-    if cfg.enable_superinstruction() {
-        info!("🚀 超级指令优化已启用 - Superinstruction optimization is ENABLED");
+    let is_enabled = cfg.enable_superinstruction();
+    
+    // 获取更多执行上下文信息，使日志更加有用
+    if is_enabled {
+        info!(
+            target: "revm::superinstructions",
+            enabled = true,
+            "🚀 超级指令优化已启用 - Superinstruction optimization is ENABLED"
+        );
     } else {
-        info!("⚠️ 超级指令优化未启用 - Superinstruction optimization is DISABLED");
+        info!(
+            target: "revm::superinstructions",
+            enabled = false,
+            "⚠️ 超级指令优化未启用 - Superinstruction optimization is DISABLED"
+        );
     }
 }
 
@@ -159,7 +165,7 @@ where
     #[inline]
     fn frame_run(&mut self) -> Result<FrameInitOrResult<Self::Frame>, ContextDbError<CTX>> {
         // 记录超级指令状态
-        log_superinstruction_status(&self.ctx, self.frame_stack.index().is_none());
+        log_superinstruction_status(&self.ctx);
         
         let frame = self.frame_stack.get();
         let context = &mut self.ctx;

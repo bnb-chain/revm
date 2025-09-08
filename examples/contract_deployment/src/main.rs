@@ -2,6 +2,9 @@
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
 
 use anyhow::{anyhow, bail};
+// 添加对tracing的支持
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
+use tracing::{info, debug};
 use revm::{
     bytecode::opcode,
     context::{Context, TxEnv},
@@ -45,6 +48,13 @@ const RET: &[u8] = &[
 const RUNTIME_BYTECODE: &[u8] = &[opcode::PUSH0, opcode::SLOAD];
 
 fn main() -> anyhow::Result<()> {
+    // 初始化tracing
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
+    
+    info!("Starting contract deployment example with tracing initialized");
     let param = 0x42;
     let bytecode: Bytes = [INIT_CODE, RET, RUNTIME_BYTECODE, &[param]].concat().into();
     let ctx = Context::mainnet().with_db(CacheDB::<EmptyDB>::default());

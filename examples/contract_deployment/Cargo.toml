@@ -22,3 +22,5 @@ revm = { workspace = true, features = ["std"] }
 
 # misc
 anyhow = "1.0.89"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
