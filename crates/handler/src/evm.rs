@@ -7,28 +7,19 @@ use context::{ContextTr, Database, Evm, FrameStack};
 use context_interface::context::ContextError;
 use context::Cfg;
 use interpreter::{interpreter::EthInterpreter, interpreter_action::FrameInit, InterpreterResult};
-use tracing::info;
 
 /// 记录超级指令状态的辅助函数
-/// 
-/// 记录当前执行上下文中超级指令的状态
 #[inline]
 fn log_superinstruction_status<CTX: ContextTr>(ctx: &CTX) {
-    let cfg = ctx.cfg();
-    let is_enabled = cfg.enable_superinstruction();
-    
-    // 获取更多执行上下文信息，使日志更加有用
-    if is_enabled {
-        info!(
+    // 只在调试时才记录这个信息
+    #[cfg(debug_assertions)]
+    {
+        let is_enabled = ctx.cfg().enable_superinstruction();
+        tracing::debug!(
             target: "revm::superinstructions",
-            enabled = true,
-            "🚀 超级指令优化已启用 - Superinstruction optimization is ENABLED"
-        );
-    } else {
-        info!(
-            target: "revm::superinstructions",
-            enabled = false,
-            "⚠️ 超级指令优化未启用 - Superinstruction optimization is DISABLED"
+            enabled = is_enabled,
+            "超级指令优化: {}",
+            if is_enabled { "已启用" } else { "未启用" }
         );
     }
 }
@@ -170,14 +161,40 @@ where
         let frame = self.frame_stack.get();
         let context = &mut self.ctx;
         let instructions = &mut self.instruction;
-        let ins_table = match frame.is_superinstruction {
-            true => instructions.superinstruction_table(),
-            false => instructions.instruction_table(),
+        
+        // 记录超级指令使用状态
+        let is_using_superinstruction = frame.is_superinstruction;
+        let ins_table = if is_using_superinstruction {
+            instructions.superinstruction_table()
+        } else {
+            instructions.instruction_table()
         };
 
+        // 记录执行前的 gas 状态
+        let gas_before_execution = frame.interpreter.gas.remaining();
+        
         let action = frame
             .interpreter
             .run_plain(ins_table, context);
+
+        // 记录 gas 消耗信息
+        let gas_after_execution = frame.interpreter.gas.remaining();
+        let gas_used = gas_before_execution - gas_after_execution;
+        
+        // 记录详细执行状态和gas消耗
+        tracing::info!(
+            target: "revm::gas",
+            si = is_using_superinstruction,
+            gas = gas_used,
+            before = gas_before_execution,
+            after = gas_after_execution,
+            path = if is_using_superinstruction { "SI" } else { "STD" }, 
+            "Gas: {} -> {} = {} ({})", 
+            gas_before_execution,
+            gas_after_execution,
+            gas_used,
+            if is_using_superinstruction { "SI" } else { "STD" }
+        );
 
         frame.process_next_action(context, action).inspect(|i| {
             if i.is_result() {

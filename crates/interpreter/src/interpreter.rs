@@ -22,6 +22,7 @@ use crate::{
     host::DummyHost, instruction_context::InstructionContext, interpreter_types::*, Gas, Host,
     InstructionResult, InstructionTable, InterpreterAction,
 };
+use tracing;
 use bytecode::Bytecode;
 use primitives::{hardfork::SpecId, Bytes};
 
@@ -267,6 +268,7 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
     ) {
         // Get current opcode.
         let opcode = self.bytecode.opcode();
+        let pc = self.bytecode.pc(); // 使用pc()而不是program_counter()
 
         // SAFETY: In analysis we are doing padding of bytecode so that we are sure that last
         // byte instruction is STOP so we are safe to just increment program_counter bcs on last instruction
@@ -274,15 +276,52 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         self.bytecode.relative_jump(1);
 
         let instruction = unsafe { instruction_table.get_unchecked(opcode as usize) };
-
+        
+        // 记录执行指令前的 gas 状态
+        let gas_before = self.gas.remaining();
+        
+        // 检查是否有足够的 gas
         if self.gas.record_cost_unsafe(instruction.static_gas()) {
+            tracing::info!(
+                target: "revm::opcode",
+                opcode = %format!("0x{:02X}", opcode),
+                pc = %pc,
+                static_gas = %instruction.static_gas(),
+                gas_remaining = %gas_before,
+                "OOG: opcode={:02X} at PC={} needs {} gas, only {} remaining",
+                opcode, pc, instruction.static_gas(), gas_before
+            );
             return self.halt_oog();
         }
+        
+        // 记录静态 gas 消耗
+        let after_static_gas = self.gas.remaining();
+        let static_gas_used = gas_before - after_static_gas;
+        
         let context = InstructionContext {
             interpreter: self,
             host,
         };
+        
+        // 执行指令
         instruction.execute(context);
+        
+        // 记录执行后的总 gas 消耗
+        let total_gas_used = gas_before - self.gas.remaining();
+        let dynamic_gas_used = total_gas_used - static_gas_used;
+        
+        // 记录每个 opcode 的详细 gas 消耗
+        tracing::info!(
+            target: "revm::opcode",
+            opcode = %format!("0x{:02X}", opcode),
+            pc = %pc,
+            static_gas = %static_gas_used,
+            dynamic_gas = %dynamic_gas_used,
+            total_gas = %total_gas_used,
+            gas_remaining = %self.gas.remaining(),
+            "OPCODE: {:02X} at PC={} | static={} dynamic={} total={} remaining={}",
+            opcode, pc, static_gas_used, dynamic_gas_used, total_gas_used, self.gas.remaining()
+        );
     }
 
     /// Executes the instruction at the current instruction pointer.
@@ -302,9 +341,24 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         instruction_table: &InstructionTable<IW, H>,
         host: &mut H,
     ) -> InterpreterAction {
+        // 记录初始 gas
+        let initial_gas = self.gas.remaining();
+        
         while self.bytecode.is_not_end() {
             self.step(instruction_table, host);
         }
+        
+        // 记录最终 gas 使用情况
+        let final_gas = self.gas.remaining();
+        let gas_used = initial_gas - final_gas;
+        tracing::debug!(
+            initial_gas = %initial_gas,
+            final_gas = %final_gas,
+            gas_used = %gas_used,
+            refund = %self.gas.refunded(),
+            "EVM execution completed"
+        );
+        
         self.take_next_action()
     }
 }

@@ -28,7 +28,12 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
                         match do_basic_block_opcode_fusion(&code) {
                             Ok(fused_vec) => {
                                 let fused = Bytecode::new_raw(Bytes::from(fused_vec));
-                                // println!("{:?}", fused.bytecode().encode_hex());
+                                
+                                // 只记录关键信息：成功优化并缓存
+                                tracing::info!(
+                                    target: "revm::superinstructions",
+                                    "SI optimized: {}", hash
+                                );
                                 OpCodeCache::insert(&hash, fused);
                             },
                             Err(_) => {},
@@ -47,10 +52,16 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
 // Try to fetch from the cache; if it misses, submit the task to the background thread
 // asynchronously and return the original code immediately.
 pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Bytecode, bool) {
+    // 尝试从缓存中获取优化的字节码
     if let Some(bytecode) = OpCodeCache::get(hash) {
+        // 这是关键路径，记录缓存命中信息
+        tracing::info!(
+            target: "revm::superinstructions",
+            "SI cache hit: {}", hash
+        );
         (bytecode, true)
-        // (code, false)
     } else {
+        // 异步提交字节码优化任务
         let _ = CODE_FUSION_TX.send((OptimizeTaskType::Generate, hash.clone(), code.bytes()));
         (code, false)
     }

@@ -3959,6 +3959,7 @@ dependencies = [
  "revm-context-interface",
  "revm-primitives",
  "serde",
+ "tracing",
 ]
 
 [[package]]
