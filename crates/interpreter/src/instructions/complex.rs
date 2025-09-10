@@ -80,7 +80,7 @@ pub(super) fn pop_swap2_swap1_pop<WIRE: InterpreterTypes, H: ?Sized>(
     context: InstructionContext<'_, H, WIRE>,
 ) {
     // Gas: POP + SWAP2 + SWAP1 + POP
-    gas!(context.interpreter, 2 * gas::BASE + 2 * gas::VERYLOW);
+    // gas!(context.interpreter, 2 * gas::BASE + 2 * gas::VERYLOW);
 
     // Discard first value, keep `b`
     popn!([_discard, b], context.interpreter);
