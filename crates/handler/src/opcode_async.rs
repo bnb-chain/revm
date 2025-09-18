@@ -22,21 +22,32 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
             while let Ok((typ, hash, code)) = rx.recv() {
                 match typ {
                     OptimizeTaskType::Generate => {
+                        // Check cache first, only optimize if not cached
                         if let Some(_) = OpCodeCache::get(&hash) {
+                            tracing::debug!(
+                                target: "revm::superinstructions",
+                                "SI already cached, skipping: {}", hash
+                            );
                             continue;
                         }
+
+                        // Perform optimization for uncached bytecode
                         match do_basic_block_opcode_fusion(&code) {
                             Ok(fused_vec) => {
                                 let fused = Bytecode::new_raw(Bytes::from(fused_vec));
-                                
-                                // 只记录关键信息：成功优化并缓存
+
                                 tracing::debug!(
                                     target: "revm::superinstructions",
                                     "SI optimized: {}", hash
                                 );
                                 OpCodeCache::insert(&hash, fused);
                             },
-                            Err(_) => {},
+                            Err(_) => {
+                                tracing::debug!(
+                                    target: "revm::superinstructions",
+                                    "SI optimization failed: {}", hash
+                                );
+                            },
                         }
                     }
                     // OptimizeTaskType::Delete => {
@@ -52,16 +63,19 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
 // Try to fetch from the cache; if it misses, submit the task to the background thread
 // asynchronously and return the original code immediately.
 pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Bytecode, bool) {
-    // 尝试从缓存中获取优化的字节码
+    // Try to get optimized bytecode from cache first
     if let Some(bytecode) = OpCodeCache::get(hash) {
-        // 这是关键路径，记录缓存命中信息
         tracing::debug!(
             target: "revm::superinstructions",
             "SI cache hit: {}", hash
         );
         (bytecode, true)
     } else {
-        // 异步提交字节码优化任务
+        // Cache miss: submit optimization task and return original code
+        tracing::debug!(
+            target: "revm::superinstructions",
+            "SI cache miss, submitting for optimization: {}", hash
+        );
         let _ = CODE_FUSION_TX.send((OptimizeTaskType::Generate, hash.clone(), code.bytes()));
         (code, false)
     }
