@@ -282,7 +282,7 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         
         // 检查是否有足够的 gas
         if self.gas.record_cost_unsafe(instruction.static_gas()) {
-            tracing::info!(
+            tracing::debug!(
                 target: "revm::opcode",
                 opcode = %format!("0x{:02X}", opcode),
                 pc = %pc,
@@ -311,7 +311,7 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         let dynamic_gas_used = total_gas_used - static_gas_used;
         
         // 记录每个 opcode 的详细 gas 消耗
-        tracing::info!(
+        tracing::debug!(
             target: "revm::opcode",
             opcode = %format!("0x{:02X}", opcode),
             pc = %pc,

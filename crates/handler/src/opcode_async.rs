@@ -30,7 +30,7 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
                                 let fused = Bytecode::new_raw(Bytes::from(fused_vec));
                                 
                                 // 只记录关键信息：成功优化并缓存
-                                tracing::info!(
+                                tracing::debug!(
                                     target: "revm::superinstructions",
                                     "SI optimized: {}", hash
                                 );
@@ -55,7 +55,7 @@ pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Byt
     // 尝试从缓存中获取优化的字节码
     if let Some(bytecode) = OpCodeCache::get(hash) {
         // 这是关键路径，记录缓存命中信息
-        tracing::info!(
+        tracing::debug!(
             target: "revm::superinstructions",
             "SI cache hit: {}", hash
         );

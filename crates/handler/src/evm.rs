@@ -182,14 +182,14 @@ where
         let gas_used = gas_before_execution - gas_after_execution;
         
         // 记录详细执行状态和gas消耗
-        tracing::info!(
+        tracing::debug!(
             target: "revm::gas",
             si = is_using_superinstruction,
             gas = gas_used,
             before = gas_before_execution,
             after = gas_after_execution,
-            path = if is_using_superinstruction { "SI" } else { "STD" }, 
-            "Gas: {} -> {} = {} ({})", 
+            path = if is_using_superinstruction { "SI" } else { "STD" },
+            "Gas: {} -> {} = {} ({})",
             gas_before_execution,
             gas_after_execution,
             gas_used,
