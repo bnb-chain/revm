@@ -218,7 +218,8 @@ impl Immediates for ExtBytecode {
 
 impl LegacyBytecode for ExtBytecode {
     fn bytecode_len(&self) -> usize {
-        self.base.len()
+        // bytecode_len should return the original bytecode size, not the optimized size
+        self.origin.len()
     }
 
     fn bytecode_slice(&self) -> &[u8] {
