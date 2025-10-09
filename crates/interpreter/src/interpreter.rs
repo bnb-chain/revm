@@ -298,6 +298,10 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         let after_static_gas = self.gas.remaining();
         let static_gas_used = gas_before - after_static_gas;
         
+        // 记录执行前的完整状态 (structLogger风格)
+        let stack_before = self.stack.data().clone();
+        let memory_size_before = self.memory.size();
+        
         let context = InstructionContext {
             interpreter: self,
             host,
@@ -306,9 +310,30 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         // 执行指令
         instruction.execute(context);
         
+        // 记录执行后的状态变化
+        let stack_after = self.stack.data().clone();
+        let memory_size_after = self.memory.size();
+        
         // 记录执行后的总 gas 消耗
         let total_gas_used = gas_before - self.gas.remaining();
         let dynamic_gas_used = total_gas_used - static_gas_used;
+        
+        // StructLogger 风格的完整执行日志
+        tracing::debug!(
+            target: "revm::struct_logger",
+            pc = %pc,
+            opcode = %format!("0x{:02X}", opcode),
+            gas_cost = %total_gas_used,
+            gas_remaining = %self.gas.remaining(),
+            stack_size_before = %stack_before.len(),
+            stack_size_after = %stack_after.len(),
+            memory_size_before = %memory_size_before,
+            memory_size_after = %memory_size_after,
+            "{{\"pc\":{},\"op\":{},\"gas\":{},\"gasCost\":{},\"depth\":1,\"stack\":{:?},\"memory\":{{\"size\":{}}},\"storage\":{{}}}}",
+            pc, opcode, self.gas.remaining(), total_gas_used, 
+            stack_after.iter().map(|v| format!("0x{:064x}", v)).collect::<Vec<_>>(),
+            memory_size_after
+        );
         
         // 记录每个 opcode 的详细 gas 消耗
         tracing::debug!(

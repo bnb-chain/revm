@@ -31,6 +31,18 @@ pub fn mstore<WIRE: InterpreterTypes, H: ?Sized>(context: InstructionContext<'_,
         .interpreter
         .memory
         .set(offset, &value.to_be_bytes::<32>());
+
+    // 记录内存写入日志
+    tracing::debug!(
+        target: "revm::memory",
+        offset = %format!("0x{:x}", offset),
+        value = %format!("0x{:064x}", value),
+        memory_size = %context.interpreter.memory.size(),
+        "MSTORE: offset=0x{:x} value=0x{:064x} memory_size={}",
+        offset,
+        value,
+        context.interpreter.memory.size()
+    );
 }
 
 /// Implements the MSTORE8 instruction.

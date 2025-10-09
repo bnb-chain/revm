@@ -206,6 +206,21 @@ pub fn sload<WIRE: InterpreterTypes, H: Host + ?Sized>(context: InstructionConte
         context.interpreter,
         gas::sload_cost(context.interpreter.runtime_flag.spec_id(), value.is_cold)
     );
+
+    // 记录存储读取日志
+    tracing::debug!(
+        target: "revm::storage",
+        address = %format!("0x{:040x}", context.interpreter.input.target_address()),
+        key = %format!("0x{:064x}", *index),
+        value = %format!("0x{:064x}", value.data),
+        is_cold = %value.is_cold,
+        "SLOAD: address={:040x} key={:064x} value={:064x} cold={}",
+        context.interpreter.input.target_address(),
+        *index,
+        value.data,
+        value.is_cold
+    );
+
     *index = value.data;
 }
 
@@ -254,6 +269,22 @@ pub fn sstore<WIRE: InterpreterTypes, H: Host + ?Sized>(context: InstructionCont
         context.interpreter.runtime_flag.spec_id(),
         &state_load.data,
     ));
+
+    // 记录存储写入日志
+    tracing::debug!(
+        target: "revm::storage",
+        address = %format!("0x{:040x}", context.interpreter.input.target_address()),
+        key = %format!("0x{:064x}", index),
+        old_value = %format!("0x{:064x}", state_load.data.present_value),
+        new_value = %format!("0x{:064x}", value),
+        is_cold = %state_load.is_cold,
+        "SSTORE: address={:040x} key={:064x} old={:064x} new={:064x} cold={}",
+        context.interpreter.input.target_address(),
+        index,
+        state_load.data.present_value,
+        value,
+        state_load.is_cold
+    );
 }
 
 /// EIP-1153: Transient storage opcodes
