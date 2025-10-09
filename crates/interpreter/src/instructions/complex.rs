@@ -551,21 +551,38 @@ pub(super) fn swap1_push1_dup1_not_swap2_add_and_dup2_add_swap1_dup2_lt<
 }
 
 /// Fused instruction: AND DUP2 ADD SWAP1 DUP2 LT
+/// 
+/// Standard sequence on initial stack [..., A, B, C]:
+/// 1. AND:   pop C, B; push B&C          → [..., A, B&C]
+/// 2. DUP2:  dup 2nd element (A)         → [..., A, B&C, A]
+/// 3. ADD:   pop A, B&C; push sum        → [..., A, sum]
+/// 4. SWAP1: swap top two                → [..., sum, A]
+/// 5. DUP2:  dup 2nd element (sum)       → [..., sum, A, sum]
+/// 6. LT:    pop sum, A; push (A < sum)  → [..., sum, (A < sum)]
 pub(super) fn and_dup2_add_swap1_dup2_lt<WIRE: InterpreterTypes, H: ?Sized>(
     context: InstructionContext<'_, H, WIRE>,
 ) {
     // gas!(context.interpreter, 6*gas::VERYLOW);
 
-    // Step 1: AND (pop x, y; push y&x)
-    popn!([a], context.interpreter);
-    backn!([c, b], context.interpreter);
-    let tmp = *c;
-    *c = a + *b + *c;
-    if *c < tmp {
-        *b = U256::ONE;
-    } else {
-        *b = U256::ZERO;
-    }
+    // Initial stack: [..., A, B, C]
+    
+    // Perform all operations at once by manipulating the stack efficiently
+    popn!([c, b], context.interpreter);
+    backn!([a], context.interpreter);
+    
+    let and_result = b & c;
+    let orig_a = *a;
+    let sum = orig_a + and_result;
+    
+    // Update stack position that was A to now be sum
+    *a = sum;
+    
+    // LT: checks if first popped < second popped
+    // In standard: pop sum (top), pop A (second), result = (sum < A)
+    let lt_result = if sum < orig_a { U256::ONE } else { U256::ZERO };
+    push!(context.interpreter, lt_result);
+    
+    // Final stack: [..., sum, (sum < orig_a)]
 
     // Skip remaining 5 bytes (pattern length 6)
     context.interpreter.bytecode.relative_jump(5);
