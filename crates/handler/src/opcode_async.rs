@@ -71,29 +71,16 @@ pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Byt
         );
         (bytecode, true)
     } else {
-        // Cache miss: perform synchronous optimization to ensure consistency
+        // Cache miss: submit async optimization task and return original bytecode
         tracing::debug!(
             target: "revm::superinstructions",
-            "SI cache miss, performing sync optimization: {}", hash
+            "SI cache miss, submitting async optimization: {}", hash
         );
 
-        match do_basic_block_opcode_fusion(&code.bytes()) {
-            Ok(fused_vec) => {
-                let fused = Bytecode::new_raw(Bytes::from(fused_vec));
-                tracing::debug!(
-                    target: "revm::superinstructions",
-                    "SI sync optimization successful: {}", hash
-                );
-                OpCodeCache::insert(hash, fused.clone());
-                (fused, true)
-            },
-            Err(_) => {
-                tracing::debug!(
-                    target: "revm::superinstructions",
-                    "SI sync optimization failed, using original: {}", hash
-                );
-                (code, false)
-            }
-        }
+        // Submit the optimization task to the background thread
+        let _ = CODE_FUSION_TX.send((OptimizeTaskType::Generate, *hash, code.bytes()));
+
+        // Return the original bytecode immediately (will use optimized version on next execution)
+        (code, false)
     }
 }
