@@ -24,10 +24,6 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
                     OptimizeTaskType::Generate => {
                         // Check cache first, only optimize if not cached
                         if let Some(_) = OpCodeCache::get(&hash) {
-                            tracing::debug!(
-                                target: "revm::superinstructions",
-                                "SI already cached, skipping: {}", hash
-                            );
                             continue;
                         }
 
@@ -35,19 +31,9 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
                         match do_basic_block_opcode_fusion(&code) {
                             Ok(fused_vec) => {
                                 let fused = Bytecode::new_raw(Bytes::from(fused_vec));
-
-                                tracing::debug!(
-                                    target: "revm::superinstructions",
-                                    "SI optimized: {}", hash
-                                );
                                 OpCodeCache::insert(&hash, fused);
                             },
-                            Err(_) => {
-                                tracing::debug!(
-                                    target: "revm::superinstructions",
-                                    "SI optimization failed: {}", hash
-                                );
-                            },
+                            Err(_) => {},
                         }
                     }
                     // OptimizeTaskType::Delete => {
@@ -65,18 +51,9 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
 pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Bytecode, bool) {
     // Try to get optimized bytecode from cache first
     if let Some(bytecode) = OpCodeCache::get(hash) {
-        tracing::debug!(
-            target: "revm::superinstructions",
-            "SI cache hit: {}", hash
-        );
         (bytecode, true)
     } else {
         // Cache miss: submit async optimization task and return original bytecode
-        tracing::debug!(
-            target: "revm::superinstructions",
-            "SI cache miss, submitting async optimization: {}", hash
-        );
-
         // Submit the optimization task to the background thread
         let _ = CODE_FUSION_TX.send((OptimizeTaskType::Generate, *hash, code.bytes()));
 

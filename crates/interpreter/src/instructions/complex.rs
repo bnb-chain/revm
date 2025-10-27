@@ -1,6 +1,5 @@
 use crate::InstructionResult;
 use crate::{
-    gas,
     instructions::i256::i256_cmp,
     interpreter_types::{Immediates, InputsTr, InterpreterTypes, Jumps, MemoryTr, StackTr},
     InstructionContext,

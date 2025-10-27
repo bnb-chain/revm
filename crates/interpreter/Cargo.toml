@@ -25,7 +25,6 @@ context-interface.workspace = true
 
 # optional
 serde = { workspace = true, features = ["derive", "rc"], optional = true }
-tracing = "0.1.41"
 
 # Jumpmap
 bitvec = { workspace = true, features = ["alloc"] }

@@ -5,24 +5,7 @@ use crate::{
 use auto_impl::auto_impl;
 use context::{ContextTr, Database, Evm, FrameStack};
 use context_interface::context::ContextError;
-use context::Cfg;
 use interpreter::{interpreter::EthInterpreter, interpreter_action::FrameInit, InterpreterResult};
-
-/// 记录超级指令状态的辅助函数
-#[inline]
-fn log_superinstruction_status<CTX: ContextTr>(ctx: &CTX) {
-    // 只在调试时才记录这个信息
-    #[cfg(debug_assertions)]
-    {
-        let is_enabled = ctx.cfg().enable_superinstruction();
-        tracing::debug!(
-            target: "revm::superinstructions",
-            enabled = is_enabled,
-            "超级指令优化: {}",
-            if is_enabled { "已启用" } else { "未启用" }
-        );
-    }
-}
 
 /// Type alias for database error within a context
 pub type ContextDbError<CTX> = ContextError<ContextTrDbError<CTX>>;
@@ -155,46 +138,19 @@ where
     /// Run the frame from the top of the stack. Returns the frame init or result.
     #[inline]
     fn frame_run(&mut self) -> Result<FrameInitOrResult<Self::Frame>, ContextDbError<CTX>> {
-        // 记录超级指令状态
-        log_superinstruction_status(&self.ctx);
-        
         let frame = self.frame_stack.get();
         let context = &mut self.ctx;
         let instructions = &mut self.instruction;
         
-        // 记录超级指令使用状态
-        let is_using_superinstruction = frame.is_superinstruction;
-        let ins_table = if is_using_superinstruction {
+        let ins_table = if frame.is_superinstruction {
             instructions.superinstruction_table()
         } else {
             instructions.instruction_table()
         };
-
-        // 记录执行前的 gas 状态
-        let gas_before_execution = frame.interpreter.gas.remaining();
         
         let action = frame
             .interpreter
             .run_plain(ins_table, context);
-
-        // 记录 gas 消耗信息
-        let gas_after_execution = frame.interpreter.gas.remaining();
-        let gas_used = gas_before_execution - gas_after_execution;
-        
-        // 记录详细执行状态和gas消耗
-        tracing::debug!(
-            target: "revm::gas",
-            si = is_using_superinstruction,
-            gas = gas_used,
-            before = gas_before_execution,
-            after = gas_after_execution,
-            path = if is_using_superinstruction { "SI" } else { "STD" },
-            "Gas: {} -> {} = {} ({})",
-            gas_before_execution,
-            gas_after_execution,
-            gas_used,
-            if is_using_superinstruction { "SI" } else { "STD" }
-        );
 
         frame.process_next_action(context, action).inspect(|i| {
             if i.is_result() {
