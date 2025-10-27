@@ -206,7 +206,6 @@ pub fn sload<WIRE: InterpreterTypes, H: Host + ?Sized>(context: InstructionConte
         context.interpreter,
         gas::sload_cost(context.interpreter.runtime_flag.spec_id(), value.is_cold)
     );
-
     *index = value.data;
 }
 

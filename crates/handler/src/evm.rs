@@ -141,13 +141,10 @@ where
         let frame = self.frame_stack.get();
         let context = &mut self.ctx;
         let instructions = &mut self.instruction;
-        
-        let ins_table = if frame.is_superinstruction {
-            instructions.superinstruction_table()
-        } else {
-            instructions.instruction_table()
+        let ins_table = match frame.is_superinstruction {
+            true => instructions.superinstruction_table(),
+            false => instructions.instruction_table(),
         };
-        
         let action = frame
             .interpreter
             .run_plain(ins_table, context);

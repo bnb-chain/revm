@@ -274,16 +274,13 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         self.bytecode.relative_jump(1);
 
         let instruction = unsafe { instruction_table.get_unchecked(opcode as usize) };
-        
         if self.gas.record_cost_unsafe(instruction.static_gas()) {
             return self.halt_oog();
         }
-        
         let context = InstructionContext {
             interpreter: self,
             host,
         };
-        
         instruction.execute(context);
     }
 
@@ -307,7 +304,6 @@ impl<IW: InterpreterTypes> Interpreter<IW> {
         while self.bytecode.is_not_end() {
             self.step(instruction_table, host);
         }
-        
         self.take_next_action()
     }
 }
