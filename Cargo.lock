@@ -3807,6 +3807,7 @@ dependencies = [
  "phf",
  "revm-primitives",
  "serde",
+ "tracing",
 ]
 
 [[package]]

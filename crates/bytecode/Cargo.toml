@@ -24,6 +24,9 @@ primitives.workspace = true
 # Jumpmap
 bitvec = { workspace = true, features = ["alloc"] }
 
+# Tracing
+tracing = { version = "0.1", default-features = false }
+
 # Optional
 serde = { workspace = true, features = ["derive", "rc"], optional = true }
 

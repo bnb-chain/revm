@@ -3,6 +3,7 @@ use crate::opcode;
 use bitvec::{bitvec, order::Lsb0, vec::BitVec};
 use primitives::Bytes;
 use std::vec::Vec;
+use tracing;
 
 /// Analyzes the bytecode for use in [`LegacyAnalyzedBytecode`](crate::LegacyAnalyzedBytecode).
 ///
@@ -26,6 +27,13 @@ pub fn analyze_legacy(bytecode: Bytes) -> (JumpTable, Bytes) {
 
         // for si
         if let Some(steps) = unsafe {code_bitmap_for_si(&mut jumps, opcode, iterator.offset_from(start) as usize) } {
+            let offset = unsafe { iterator.offset_from(start) } as usize;
+            tracing::debug!(
+                opcode = %format_args!("0x{:02X}", opcode),
+                offset = offset,
+                steps = steps,
+                "Detected superinstruction"
+            );
             iterator = unsafe { iterator.add(steps) };
             continue
         }
@@ -293,7 +301,7 @@ mod tests {
             (opcode::SWAP3POPPOPPOP, 4, "SWAP3(1) + POP(1) + POP(1) + POP(1) = 4 bytes"),
             (opcode::DUP11MULDUP3SUBMULDUP1, 6, "DUP11(1) + MUL(1) + DUP3(1) + SUB(1) + MUL(1) + DUP1(1) = 6 bytes"),
             (opcode::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2, 10, "7 ops(7) + PUSH2(1) + immediate(2) = 10 bytes"),
-            (opcode::SUBSLTISZEROPUSH2, 5, "SUB(1) + SLT(1) + ISZERO(1) + PUSH2(1) + immediate(2) = 6 bytes, but bitmap shows 5 - CHECK THIS!"),
+            (opcode::SUBSLTISZEROPUSH2, 6, "SUB(1) + SLT(1) + ISZERO(1) + PUSH2(1) + immediate(2) = 6 bytes"),
         ];
 
         use bitvec::{bitvec, order::Lsb0};
