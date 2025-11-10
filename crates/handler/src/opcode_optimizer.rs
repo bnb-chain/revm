@@ -26,7 +26,8 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
             return Ok(fused);
         }
 
-        if fused[cur] <= MIN_OPTIMIZED_OPCODE && fused[cur] >= MAX_OPTIMIZED_OPCODE {
+        // Check if bytecode already contains optimized opcodes (0xB0-0xCF range)
+        if fused[cur] >= MIN_OPTIMIZED_OPCODE && fused[cur] < MAX_OPTIMIZED_OPCODE {
             return Err(FusionError::FailPreprocessing);
         }
 
@@ -444,23 +445,52 @@ pub(crate) fn do_code_fusion(code: &[u8]) -> Result<Vec<u8>, FusionError> {
     Ok(fused)
 }
 
+/// Optimized lookup table for instruction skip steps (including immediates).
+/// This unifies superinstruction metadata with regular PUSH instruction handling.
+/// Using a const lookup table for O(1) performance instead of match statements.
+const SKIP_STEPS_TABLE: [u8; 256] = {
+    let mut table = [0; 256];
+    
+    // Regular PUSH instructions (PUSH1-PUSH32)
+    let mut i = op::PUSH1;
+    while i <= op::PUSH32 {
+        table[i as usize] = i - op::PUSH1 + 1;
+        i += 1;
+    }
+    
+    // Superinstructions with immediates
+    table[op::PUSH2JUMP as usize] = 3;  // push2 imm16 + 1 NOP
+    table[op::PUSH2JUMPI as usize] = 3;
+    table[op::PUSH1PUSH1 as usize] = 3;  // push1 imm1 + 1 NOP + push1
+    table[op::PUSH1ADD as usize] = 2;    // push1 imm1 + 1 NOP
+    table[op::PUSH1SHL as usize] = 2;
+    table[op::PUSH1DUP1 as usize] = 2;
+    table[op::JUMPIFZERO as usize] = 4;  // PUSH2 imm16 + NOP + JUMPI
+    table[op::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] = 9;  // includes PUSH2 immediate
+    table[op::SUBSLTISZEROPUSH2 as usize] = 5;  // includes PUSH2 immediate
+    table[op::DUP1PUSH4EQPUSH2 as usize] = 9;   // DUP1 + PUSH4(5) + EQ + PUSH2(3)
+    table[op::PUSH1CALLDATALOADPUSH1SHRDUP1PUSH4GTPUSH2 as usize] = 15;  // Complex pattern
+    table[op::PUSH1PUSH1PUSH1SHLSUB as usize] = 7;  // PUSH1(2) + PUSH1(2) + PUSH1(2) + SHL + SUB
+    table[op::ISZEROPUSH2 as usize] = 3;  // ISZERO + PUSH2(3)
+    table[op::DUP2MSTOREPUSH1ADD as usize] = 4;  // DUP2 + MSTORE + PUSH1(2) + ADD
+    table[op::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 as usize] = 9;
+    
+    table
+};
+
+/// Fast lookup for instruction skip steps using a pre-computed table.
+/// Returns the number of bytes to skip (immediate data) after the current instruction.
+/// For regular opcodes returns None (no skip), for PUSH and superinstructions with
+/// immediates returns Some(steps).
+#[inline]
 fn calculate_skip_steps(code: &[u8], cur: usize) -> Option<usize> {
     let inst = code[cur];
-
-    if inst >= op::PUSH1 && inst <= op::PUSH32 {
-        let steps = (inst - op::PUSH1 + 1) as usize;
-        return Some(steps);
-    }
-
-    match inst {
-        op::PUSH2JUMP | op::PUSH2JUMPI => Some(3), // (push2 imm16) + 1 (NOP)
-        op::PUSH1PUSH1 => Some(3),                 // push1 imm1 + 1 (NOP)
-        op::PUSH1ADD | op::PUSH1SHL | op::PUSH1DUP1 => Some(2),
-        op::JUMPIFZERO => Some(4), // PUSH2 imm16 + NOP JUMPI replaced
-        // New fused opcodes with immediates
-        op::SWAP2SWAP1DUP3SUBSWAP2DUP3GTPUSH2 => Some(9), // includes PUSH2 immediate
-        op::SUBSLTISZEROPUSH2 => Some(5), // includes PUSH2 immediate
-        _ => None,
+    let steps = SKIP_STEPS_TABLE[inst as usize];
+    
+    if steps > 0 {
+        Some(steps as usize)
+    } else {
+        None
     }
 }
 

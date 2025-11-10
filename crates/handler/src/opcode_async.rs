@@ -50,8 +50,10 @@ static CODE_FUSION_TX: Lazy<Sender<(OptimizeTaskType, B256, Bytes)>> = Lazy::new
 // asynchronously and return the original code immediately.
 pub(crate) fn gen_or_rewrite_optimized_code(hash: &B256, code: Bytecode) -> (Bytecode, bool) {
     // Try to get optimized bytecode from cache first
-    if let Some(bytecode) = OpCodeCache::get(hash) {
-        (bytecode, true)
+    if let Some(bytecode_arc) = OpCodeCache::get(hash) {
+        // Clone the Arc content to return owned Bytecode
+        // This is still efficient as Bytecode internally uses Arc for data
+        ((*bytecode_arc).clone(), true)
     } else {
         // Cache miss: submit async optimization task and return original bytecode
         // Submit the optimization task to the background thread

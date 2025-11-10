@@ -244,11 +244,12 @@ impl EthFrame<EthInterpreter> {
             return return_result(InstructionResult::Stop);
         }
 
-        let mut cache_hit = false;
-        let mut si_bytecode = bytecode.clone();
-        if ctx.enable_superinstruction() {
-            (si_bytecode, cache_hit) = gen_or_rewrite_optimized_code(&code_hash, si_bytecode);
-        }
+        // Only clone bytecode if superinstruction is enabled to avoid unnecessary allocation
+        let (si_bytecode, cache_hit) = if ctx.enable_superinstruction() {
+            gen_or_rewrite_optimized_code(&code_hash, bytecode.clone())
+        } else {
+            (bytecode.clone(), false)
+        };
 
         // Create interpreter and executes call and push new CallStackFrame.
         this.get(EthFrame::invalid).clear(
